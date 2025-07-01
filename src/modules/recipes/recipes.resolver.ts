@@ -15,7 +15,7 @@ const pubSub = new PubSub();
 
 @Resolver(() => Recipe)
 export class RecipesResolver {
-  constructor(private readonly recipesService: RecipesService) { }
+  constructor(private readonly recipesService: RecipesService) {}
 
   @Public()
   @Query(() => Recipe)
@@ -36,11 +36,11 @@ export class RecipesResolver {
   @Auth()
   @Mutation(() => Recipe)
   async addRecipe(
-    @Args('newRecipeData') newRecipeData: NewRecipeInput,
+    @Args('input') input: NewRecipeInput,
     @CurrentUser() user: UserModel,
   ): Promise<Recipe> {
     console.log(`Recipe being added by user: ${user.email}`);
-    const recipe = await this.recipesService.create(newRecipeData);
+    const recipe = await this.recipesService.create(input);
     pubSub.publish('recipeAdded', { recipeAdded: recipe });
     return recipe;
   }

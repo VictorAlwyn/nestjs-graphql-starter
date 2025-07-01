@@ -27,9 +27,9 @@ type MessageResponse {
 }
 
 type Mutation {
-  addRecipe(newRecipeData: NewRecipeInput!): Recipe!
+  addRecipe(input: NewRecipeInput!): Recipe!
   deleteUser: DeleteUserResponse!
-  login(loginInput: LoginInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
   logout: MessageResponse!
   register(input: RegisterInput!): UserModel!
   removeRecipe(id: String!): Boolean!

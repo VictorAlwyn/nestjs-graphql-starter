@@ -10,11 +10,11 @@ import { UserService } from './user.service';
 
 @Resolver(() => UserModel)
 export class UserResolver {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Public()
   @Mutation(() => UserModel)
-  async register(@Args('input') input: RegisterInput): Promise<UserModel> {
+  register(@Args('input') input: RegisterInput): Promise<UserModel> {
     return this.userService.createUser(input);
   }
 
