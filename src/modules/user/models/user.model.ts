@@ -1,4 +1,11 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+
+import { UserRole } from '../../../infra/database/schemas/users.schema';
+
+registerEnumType(UserRole, {
+  name: 'UserRole',
+  description: 'User role enumeration',
+});
 
 @ObjectType()
 export class UserModel {
@@ -8,11 +15,11 @@ export class UserModel {
   @Field()
   email: string;
 
-  @Field({ nullable: true })
-  name?: string;
-
   @Field()
-  role: string;
+  name: string;
+
+  @Field(() => UserRole)
+  role: UserRole;
 
   @Field()
   isActive: boolean;

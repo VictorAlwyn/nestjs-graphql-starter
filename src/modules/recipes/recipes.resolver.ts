@@ -4,7 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 
 import { Auth, Public, AdminOnly } from '../../core/decorators/auth.decorators';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
-import { User } from '../auth/models/user.model';
+import { UserModel } from '../user/models/user.model';
 
 import { NewRecipeInput } from './dto/new-recipe.input';
 import { RecipesArgs } from './dto/recipes.args';
@@ -15,7 +15,7 @@ const pubSub = new PubSub();
 
 @Resolver(() => Recipe)
 export class RecipesResolver {
-  constructor(private readonly recipesService: RecipesService) {}
+  constructor(private readonly recipesService: RecipesService) { }
 
   @Public()
   @Query(() => Recipe)
@@ -37,7 +37,7 @@ export class RecipesResolver {
   @Mutation(() => Recipe)
   async addRecipe(
     @Args('newRecipeData') newRecipeData: NewRecipeInput,
-    @CurrentUser() user: User,
+    @CurrentUser() user: UserModel,
   ): Promise<Recipe> {
     console.log(`Recipe being added by user: ${user.email}`);
     const recipe = await this.recipesService.create(newRecipeData);
@@ -49,7 +49,7 @@ export class RecipesResolver {
   @Mutation(() => Boolean)
   async removeRecipe(
     @Args('id') id: string,
-    @CurrentUser() user: User,
+    @CurrentUser() user: UserModel,
   ): Promise<boolean> {
     console.log(`Recipe being removed by admin: ${user.email}`);
     return await this.recipesService.remove(id);

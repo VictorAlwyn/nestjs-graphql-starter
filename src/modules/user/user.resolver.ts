@@ -1,16 +1,22 @@
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import { Auth } from '../../core/decorators/auth.decorators';
+import { Auth, Public } from '../../core/decorators/auth.decorators';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 
-import { UpdateUserInput } from './dto/user.input';
+import { UpdateUserInput, RegisterInput } from './dto/user.input';
 import { UserResponse, DeleteUserResponse } from './dto/user.output';
 import { UserModel } from './models/user.model';
 import { UserService } from './user.service';
 
 @Resolver(() => UserModel)
 export class UserResolver {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
+
+  @Public()
+  @Mutation(() => UserModel)
+  async register(@Args('input') input: RegisterInput): Promise<UserModel> {
+    return this.userService.createUser(input);
+  }
 
   @Auth()
   @Query(() => UserModel)

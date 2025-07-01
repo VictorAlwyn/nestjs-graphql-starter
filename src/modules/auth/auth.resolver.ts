@@ -2,23 +2,15 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { Auth, Public } from '../../core/decorators/auth.decorators';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { UserModel } from '../user/models/user.model';
 
-import { LoginInput, RegisterInput } from './dto/auth.inputs';
+import { LoginInput } from './dto/auth.inputs';
 import { AuthPayload, MessageResponse } from './dto/auth.outputs';
-import { User } from './models/user.model';
 import { AuthService } from './services/auth.service';
 
-@Resolver(() => User)
+@Resolver(() => UserModel)
 export class AuthResolver {
   constructor(private readonly authService: AuthService) {}
-
-  @Public()
-  @Mutation(() => AuthPayload)
-  async register(
-    @Args('registerInput') registerInput: RegisterInput,
-  ): Promise<AuthPayload> {
-    return this.authService.register(registerInput);
-  }
 
   @Public()
   @Mutation(() => AuthPayload)
@@ -29,8 +21,8 @@ export class AuthResolver {
   }
 
   @Auth()
-  @Query(() => User)
-  me(@CurrentUser() user: User): User {
+  @Query(() => UserModel)
+  me(@CurrentUser() user: UserModel): UserModel {
     return user;
   }
 

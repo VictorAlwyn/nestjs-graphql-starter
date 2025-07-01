@@ -6,7 +6,7 @@ directive @upper on FIELD_DEFINITION
 
 type AuthPayload {
   token: String!
-  user: User!
+  user: UserModel!
 }
 
 """Date custom scalar type"""
@@ -31,7 +31,7 @@ type Mutation {
   deleteUser: DeleteUserResponse!
   login(loginInput: LoginInput!): AuthPayload!
   logout: MessageResponse!
-  register(registerInput: RegisterInput!): AuthPayload!
+  register(input: RegisterInput!): UserModel!
   removeRecipe(id: String!): Boolean!
   updateUser(input: UpdateUserInput!): UserResponse!
 }
@@ -74,23 +74,13 @@ input UpdateUserInput {
   name: String
 }
 
-type User {
+type UserModel {
   createdAt: Date!
   email: String!
   id: ID!
   isActive: Boolean!
   name: String!
   role: UserRole!
-  updatedAt: Date!
-}
-
-type UserModel {
-  createdAt: Date!
-  email: String!
-  id: ID!
-  isActive: Boolean!
-  name: String
-  role: String!
   updatedAt: Date!
 }
 

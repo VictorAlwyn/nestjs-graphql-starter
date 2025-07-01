@@ -1,14 +1,14 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import { User } from '../models/user.model';
+import { UserModel } from '../../user/models/user.model';
 
 @ObjectType()
 export class AuthPayload {
   @Field()
   token: string;
 
-  @Field(() => User)
-  user: User;
+  @Field(() => UserModel)
+  user: UserModel;
 }
 
 @ObjectType()

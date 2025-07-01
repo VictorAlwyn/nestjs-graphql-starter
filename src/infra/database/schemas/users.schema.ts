@@ -1,10 +1,10 @@
 import {
   pgTable,
-  serial,
   varchar,
   timestamp,
   boolean,
   text,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 export enum UserRole {
@@ -14,7 +14,7 @@ export enum UserRole {
 }
 
 export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   password: text('password').notNull(),
