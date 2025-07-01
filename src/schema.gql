@@ -2,12 +2,38 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+directive @upper on FIELD_DEFINITION
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
 """Date custom scalar type"""
 scalar Date
 
+type DeleteUserResponse {
+  message: String!
+  success: Boolean!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type MessageResponse {
+  message: String!
+}
+
 type Mutation {
   addRecipe(newRecipeData: NewRecipeInput!): Recipe!
+  deleteUser: DeleteUserResponse!
+  login(loginInput: LoginInput!): AuthPayload!
+  logout: MessageResponse!
+  register(registerInput: RegisterInput!): AuthPayload!
   removeRecipe(id: String!): Boolean!
+  updateUser(input: UpdateUserInput!): UserResponse!
 }
 
 input NewRecipeInput {
@@ -17,8 +43,11 @@ input NewRecipeInput {
 }
 
 type Query {
+  me: UserModel!
   recipe(id: String!): Recipe!
   recipes(skip: Int! = 0, take: Int! = 25): [Recipe!]!
+  user(id: ID!): UserModel!
+  users(limit: Float, offset: Float): [UserModel!]!
 }
 
 """recipe """
@@ -30,6 +59,49 @@ type Recipe {
   title: String!
 }
 
+input RegisterInput {
+  email: String!
+  name: String!
+  password: String!
+}
+
 type Subscription {
   recipeAdded: Recipe!
+}
+
+input UpdateUserInput {
+  isActive: Boolean
+  name: String
+}
+
+type User {
+  createdAt: Date!
+  email: String!
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  role: UserRole!
+  updatedAt: Date!
+}
+
+type UserModel {
+  createdAt: Date!
+  email: String!
+  id: ID!
+  isActive: Boolean!
+  name: String
+  role: String!
+  updatedAt: Date!
+}
+
+type UserResponse {
+  message: String!
+  user: UserModel!
+}
+
+"""User role enumeration"""
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
 }
