@@ -12,7 +12,9 @@ import {
 export class ComplexityPlugin implements ApolloServerPlugin {
   constructor(private gqlSchemaHost: GraphQLSchemaHost) {}
 
-  async requestDidStart(): Promise<GraphQLRequestListener<any>> {
+  async requestDidStart(): Promise<
+    GraphQLRequestListener<Record<string, unknown>>
+  > {
     const { schema } = this.gqlSchemaHost;
 
     return {
@@ -32,7 +34,8 @@ export class ComplexityPlugin implements ApolloServerPlugin {
             `Query is too complex: ${complexity}. Maximum allowed complexity: 20`,
           );
         }
-        console.log('Query Complexity:', complexity);
+        // Log complexity for debugging (consider using a proper logger)
+        // console.log('Query Complexity:', complexity);
       },
     };
   }

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { render } from '@react-email/components';
 
+import { AppLoggerService } from '../../../core/logger/logger.service';
 import { EmailService } from '../../../infra/email/email.service';
 import {
   WelcomeEmail,
@@ -9,6 +11,8 @@ import {
 
 @Injectable()
 export class AuthEmailService {
+  private readonly logger = new AppLoggerService('AuthEmailService');
+
   constructor(
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
@@ -28,17 +32,28 @@ export class AuthEmailService {
         ? `${frontendUrl}/verify-email?token=${verificationToken}`
         : undefined;
 
-    const template = WelcomeEmail({
-      userFirstName: firstName,
-      userEmail: userEmail,
-      verificationUrl: verificationUrl,
-    });
-
-    return await this.emailService.sendTemplateEmail(
-      userEmail,
-      'Welcome to Our Platform!',
-      template,
+    const template = render(
+      WelcomeEmail({
+        userFirstName: firstName,
+        userEmail,
+        verificationUrl,
+      }),
     );
+
+    try {
+      return await this.emailService.sendTemplateEmail(
+        userEmail,
+        'Welcome to Our Platform!',
+        template,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error('Auth email error:', error.message, error.stack);
+      } else {
+        this.logger.error('Auth email unknown error');
+      }
+      return false;
+    }
   }
 
   /**
@@ -50,21 +65,30 @@ export class AuthEmailService {
     resetToken: string,
   ): Promise<boolean> {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const resetUrl = frontendUrl
-      ? `${frontendUrl}/reset-password?token=${resetToken}`
-      : undefined;
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-    const template = PasswordResetEmail({
-      userFirstName: firstName,
-      resetUrl: resetUrl,
-      expiryTime: '1 hour',
-    });
-
-    return await this.emailService.sendTemplateEmail(
-      userEmail,
-      'Reset Your Password',
-      template,
+    const template = render(
+      PasswordResetEmail({
+        userFirstName: firstName,
+        resetUrl,
+        expiryTime: '1 hour',
+      }),
     );
+
+    try {
+      return this.emailService.sendTemplateEmail(
+        userEmail,
+        'Reset Your Password',
+        template,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error('Auth email error:', error.message, error.stack);
+      } else {
+        this.logger.error('Auth email unknown error');
+      }
+      return false;
+    }
   }
 
   /**
@@ -80,13 +104,15 @@ export class AuthEmailService {
       ? `${frontendUrl}/verify-email?token=${verificationToken}`
       : undefined;
 
-    const template = WelcomeEmail({
-      userFirstName: firstName,
-      userEmail: userEmail,
-      verificationUrl: verificationUrl,
-    });
+    const template = render(
+      WelcomeEmail({
+        userFirstName: firstName,
+        userEmail,
+        verificationUrl,
+      }),
+    );
 
-    return await this.emailService.sendTemplateEmail(
+    return this.emailService.sendTemplateEmail(
       userEmail,
       'Please Verify Your Email Address',
       template,
@@ -100,7 +126,7 @@ export class AuthEmailService {
     userEmail: string,
     firstName: string,
   ): Promise<boolean> {
-    return await this.emailService.sendEmail({
+    return this.emailService.sendEmail({
       to: userEmail,
       subject: 'Account Temporarily Locked',
       html: `
@@ -123,7 +149,7 @@ export class AuthEmailService {
   ): Promise<boolean> {
     const locationText = location ? ` from ${location}` : '';
 
-    return await this.emailService.sendEmail({
+    return this.emailService.sendEmail({
       to: userEmail,
       subject: 'New Login Detected',
       html: `

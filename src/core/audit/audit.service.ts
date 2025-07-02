@@ -47,7 +47,7 @@ export class AuditService {
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
-        status: params.status || AuditLogStatus.SUCCESS,
+        status: params.status ?? AuditLogStatus.SUCCESS,
         duration: params.duration,
         errorMessage: params.errorMessage,
         metadata: params.context?.metadata,

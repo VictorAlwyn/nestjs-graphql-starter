@@ -56,7 +56,7 @@ export class BetterAuthService {
       }
 
       const user = await this.adapter.getUserById(session.userId);
-      if (!user || !user.isActive) {
+      if (!user?.isActive) {
         return null;
       }
 
@@ -76,9 +76,11 @@ export class BetterAuthService {
    */
   async validateToken(token: string): Promise<BetterAuthUser | null> {
     try {
-      const decoded = jwt.verify(token, this.config.session.secret) as any;
+      const decoded = jwt.verify(token, this.config.session.secret) as {
+        userId: string;
+      };
       const user = await this.adapter.getUserById(decoded.userId);
-      return user && user.isActive ? user : null;
+      return user?.isActive ? user : null;
     } catch (error) {
       this.logger.error('Error validating token', error);
       return null;
@@ -91,11 +93,11 @@ export class BetterAuthService {
   async loginWithEmail(
     email: string,
     password: string,
-    req: any,
+    req: { ip?: string; headers?: Record<string, string> },
   ): Promise<BetterAuthSessionResponse> {
     try {
       const user = await this.adapter.getUserByEmail(email);
-      if (!user || !user.isActive) {
+      if (!user?.isActive) {
         throw new Error('Invalid credentials');
       }
 
@@ -152,7 +154,7 @@ export class BetterAuthService {
     email: string,
     password: string,
     name: string,
-    req: any,
+    req: { ip?: string; headers?: Record<string, string> },
   ): Promise<BetterAuthSessionResponse> {
     try {
       // Check if user already exists
@@ -213,8 +215,8 @@ export class BetterAuthService {
    */
   async loginWithOAuth(
     provider: string,
-    code: string,
-    req: any,
+    _code: string,
+    _req: unknown,
   ): Promise<BetterAuthSessionResponse> {
     try {
       // This is a simplified OAuth implementation
@@ -229,7 +231,7 @@ export class BetterAuthService {
   /**
    * Logout user
    */
-  async logout(req: any): Promise<void> {
+  async logout(req: unknown): Promise<void> {
     try {
       const token = this.extractTokenFromRequest(req);
       if (token) {
@@ -247,7 +249,7 @@ export class BetterAuthService {
   /**
    * Request password reset
    */
-  async requestPasswordReset(email: string, req: any): Promise<void> {
+  async requestPasswordReset(email: string, _req: unknown): Promise<void> {
     try {
       const user = await this.adapter.getUserByEmail(email);
       if (!user) {
@@ -277,7 +279,7 @@ export class BetterAuthService {
   async resetPassword(
     token: string,
     newPassword: string,
-    req: any,
+    req: unknown,
   ): Promise<void> {
     try {
       // Find user by reset token
@@ -288,8 +290,7 @@ export class BetterAuthService {
 
       const user = users[0];
       if (
-        !user ||
-        !user.passwordResetExpires ||
+        !user?.passwordResetExpires ||
         new Date() > user.passwordResetExpires
       ) {
         throw new Error('Invalid or expired reset token');
@@ -314,8 +315,8 @@ export class BetterAuthService {
         this.mapToUser(user),
         {
           metadata: {
-            ipAddress: req.ip,
-            userAgent: req.headers?.['user-agent'],
+            ipAddress: this.getIpAddress(req),
+            userAgent: this.getUserAgent(req),
           },
         },
       );
@@ -345,7 +346,7 @@ export class BetterAuthService {
    */
   private async createSession(
     userId: string,
-    req: any,
+    req: unknown,
   ): Promise<BetterAuthSession> {
     const token = jwt.sign(
       { userId, iat: Date.now() },
@@ -360,8 +361,8 @@ export class BetterAuthService {
       userId,
       token,
       expiresAt,
-      ipAddress: req.ip,
-      userAgent: req.headers?.['user-agent'],
+      ipAddress: this.getIpAddress(req),
+      userAgent: this.getUserAgent(req),
       isActive: true,
     };
 
@@ -371,9 +372,10 @@ export class BetterAuthService {
   /**
    * Extract token from request
    */
-  private extractTokenFromRequest(req: any): string | null {
-    const authHeader = req.headers?.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+  private extractTokenFromRequest(req: unknown): string | null {
+    const request = req as { headers?: { authorization?: string } };
+    const authHeader = request.headers?.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
     return null;
@@ -448,5 +450,24 @@ export class BetterAuthService {
    */
   private mapToUser(betterAuthUser: BetterAuthUser): BetterAuthUser {
     return betterAuthUser;
+  }
+
+  /**
+   * Get IP address from request
+   */
+  private getIpAddress(req: unknown): string | undefined {
+    const request = req as {
+      ip?: string;
+      connection?: { remoteAddress?: string };
+    };
+    return request.ip || request.connection?.remoteAddress;
+  }
+
+  /**
+   * Get user agent from request
+   */
+  private getUserAgent(req: unknown): string | undefined {
+    const request = req as { headers?: { 'user-agent'?: string } };
+    return request.headers?.['user-agent'];
   }
 }

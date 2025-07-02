@@ -42,8 +42,9 @@ export class RateLimitGuard implements CanActivate {
     }
 
     const gqlContext = GqlExecutionContext.create(context);
-    const request = gqlContext.getContext().req;
-    const user = request.user;
+    const ctx = gqlContext.getContext();
+    const request = ctx.req;
+    const user = request?.user;
 
     if (!user?.id) {
       // Allow unauthenticated requests (or you can throw an error)

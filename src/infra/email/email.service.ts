@@ -73,7 +73,9 @@ export class EmailService {
         replyTo: this.config.replyTo,
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = (await this.transporter.sendMail(mailOptions)) as {
+        messageId?: string;
+      };
 
       const recipient = Array.isArray(options.to)
         ? options.to.join(', ')
@@ -83,7 +85,7 @@ export class EmailService {
         'EmailService',
       );
       this.logger.debug(
-        `Message ID: ${result.messageId || 'unknown'}`,
+        `Message ID: ${result.messageId ?? 'unknown'}`,
         'EmailService',
       );
 
@@ -111,7 +113,7 @@ export class EmailService {
     try {
       const html = await render(template);
 
-      return await this.sendEmail({
+      return this.sendEmail({
         to,
         subject,
         html,

@@ -91,7 +91,7 @@ export class HealthService extends HealthIndicator {
 
       for (const queueName of queues) {
         const status = await this.queueService.getQueueStatus(queueName);
-        health[queueName] = status || null;
+        health[queueName] = status ?? null;
       }
 
       return health;

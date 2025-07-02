@@ -5,6 +5,19 @@ import { JobPayload } from '../types/job-payloads';
 import { QUEUE_NAMES, QueueJobOptions } from '../types/queue.types';
 import { EmailQueueWorker } from '../workers/email-queue.worker';
 
+interface EmailJobData {
+  to: string;
+  subject: string;
+  body?: string;
+  html?: string;
+  from?: string;
+}
+
+interface JobData<T = Record<string, unknown>> {
+  id: string;
+  data?: T;
+}
+
 @Injectable()
 export class QueueService implements OnModuleInit {
   private readonly logger = new Logger(QueueService.name);
@@ -30,21 +43,24 @@ export class QueueService implements OnModuleInit {
     try {
       await this.boss.createQueue(queueName);
 
-      await this.boss.work(queueName, async (jobs: any) => {
-        // pg-boss can pass either a single job or an array of jobs
-        const jobsArray = Array.isArray(jobs) ? jobs : [jobs];
+      await this.boss.work(
+        queueName,
+        async (jobs: JobData<EmailJobData> | JobData<EmailJobData>[]) => {
+          // pg-boss can pass either a single job or an array of jobs
+          const jobsArray = Array.isArray(jobs) ? jobs : [jobs];
 
-        for (const job of jobsArray) {
-          this.logger.log(`Processing email job: ${job?.id || 'unknown-id'}`);
+          for (const job of jobsArray) {
+            this.logger.log(`Processing email job: ${job?.id ?? 'unknown-id'}`);
 
-          const result = await this.emailQueueWorker.processEmailJob(job);
+            const result = await this.emailQueueWorker.processEmailJob(job);
 
-          this.logger.log('Email job completed', {
-            jobId: job?.id || 'unknown-id',
-            recipient: result.recipient,
-          });
-        }
-      });
+            this.logger.log('Email job completed', {
+              jobId: job?.id || 'unknown-id',
+              recipient: result.recipient,
+            });
+          }
+        },
+      );
 
       this.logger.log('Email worker registered');
     } catch (error) {
@@ -77,7 +93,7 @@ export class QueueService implements OnModuleInit {
     options?: QueueJobOptions,
   ): Promise<string | null> {
     try {
-      const jobId = await this.boss.send(queueName, data, options || {});
+      const jobId = await this.boss.send(queueName, data, options ?? {});
       this.logger.log(`Job added to queue "${queueName}" with ID: ${jobId}`);
       return jobId;
     } catch (error) {
@@ -173,22 +189,26 @@ export class QueueService implements OnModuleInit {
   // Utility method to add custom workers
   async addCustomWorker(
     queueName: string,
-    handler: (job: any) => Promise<any>,
+    handler: (job: JobData) => Promise<Record<string, unknown>>,
   ): Promise<void> {
     try {
       await this.boss.createQueue(queueName);
 
-      await this.boss.work(queueName, async (job: any) => {
-        this.logger.log(
-          `Processing custom job in queue "${queueName}": ${job.id}`,
-        );
+      await this.boss.work(queueName, async (jobs: JobData | JobData[]) => {
+        // pg-boss can pass either a single job or an array of jobs
+        const jobsArray = Array.isArray(jobs) ? jobs : [jobs];
 
-        const result = await handler(job);
+        for (const job of jobsArray) {
+          this.logger.log(
+            `Processing custom job in queue "${queueName}": ${job.id}`,
+          );
 
-        this.logger.log(`Custom job completed in queue "${queueName}"`, {
-          jobId: job.id,
-        });
-        return result;
+          await handler(job);
+
+          this.logger.log(`Custom job completed in queue "${queueName}"`, {
+            jobId: job.id,
+          });
+        }
       });
 
       this.logger.log(`Custom worker registered for queue: ${queueName}`);

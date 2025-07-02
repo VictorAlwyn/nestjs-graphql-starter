@@ -16,6 +16,10 @@ import {
 import { AuthPayload } from './dto/auth.outputs';
 import { AuthEmailService } from './services/auth-email.service';
 
+interface GraphQLContext {
+  req: unknown;
+}
+
 @Resolver()
 export class AuthResolver {
   constructor(
@@ -28,7 +32,7 @@ export class AuthResolver {
   @Audit({ action: AuditLogAction.LOGIN, resource: 'auth' })
   async login(
     @Args('input') loginInput: LoginInput,
-    @Context() context,
+    @Context() context: GraphQLContext,
   ): Promise<AuthPayload> {
     return this.authService.login(loginInput, context.req);
   }
@@ -38,7 +42,7 @@ export class AuthResolver {
   @Audit({ action: AuditLogAction.REGISTER, resource: 'auth' })
   async register(
     @Args('input') registerInput: RegisterInput,
-    @Context() context,
+    @Context() context: GraphQLContext,
   ): Promise<AuthPayload> {
     return this.authService.register(registerInput, context.req);
   }
@@ -48,7 +52,7 @@ export class AuthResolver {
   async loginWithOAuth(
     @Args('provider') provider: string,
     @Args('code') code: string,
-    @Context() context,
+    @Context() context: GraphQLContext,
   ): Promise<AuthPayload> {
     return this.authService.loginWithOAuth(provider, code, context.req);
   }
@@ -56,7 +60,7 @@ export class AuthResolver {
   @Mutation(() => Boolean)
   @Auth()
   @Audit({ action: AuditLogAction.LOGOUT, resource: 'auth' })
-  async logout(@Context() context): Promise<boolean> {
+  async logout(@Context() context: GraphQLContext): Promise<boolean> {
     await this.authService.logout(context.req);
     return true;
   }
@@ -65,7 +69,7 @@ export class AuthResolver {
   @Audit({ action: AuditLogAction.PASSWORD_RESET, resource: 'auth' })
   async requestPasswordReset(
     @Args('input') input: RequestPasswordResetInput,
-    @Context() context,
+    @Context() context: GraphQLContext,
   ): Promise<boolean> {
     await this.authService.requestPasswordReset(input.email, context.req);
     return true;
@@ -75,7 +79,7 @@ export class AuthResolver {
   @Audit({ action: AuditLogAction.PASSWORD_RESET, resource: 'auth' })
   async resetPassword(
     @Args('input') input: ResetPasswordInput,
-    @Context() context,
+    @Context() context: GraphQLContext,
   ): Promise<boolean> {
     await this.authService.resetPassword(
       input.token,
@@ -87,7 +91,7 @@ export class AuthResolver {
 
   @Query(() => UserModel, { nullable: true })
   @Auth()
-  async me(@CurrentUser() user: UserModel): Promise<UserModel> {
+  me(@CurrentUser() user: UserModel): UserModel {
     return user;
   }
 

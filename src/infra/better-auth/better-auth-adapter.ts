@@ -133,7 +133,7 @@ export class DrizzleBetterAuthAdapter implements BetterAuthAdapter {
   }
 
   async getSessionsByUserId(userId: string): Promise<BetterAuthSession[]> {
-    return await this.databaseService.drizzle
+    return this.databaseService.drizzle
       .select()
       .from(betterAuthSessions)
       .where(
@@ -200,7 +200,7 @@ export class DrizzleBetterAuthAdapter implements BetterAuthAdapter {
   async getOAuthAccountsByUserId(
     userId: string,
   ): Promise<BetterAuthOAuthAccount[]> {
-    return await this.databaseService.drizzle
+    return this.databaseService.drizzle
       .select()
       .from(betterAuthOAuthAccounts)
       .where(eq(betterAuthOAuthAccounts.userId, userId));
@@ -240,7 +240,7 @@ export class DrizzleBetterAuthAdapter implements BetterAuthAdapter {
     userId: string,
     limit = 100,
   ): Promise<BetterAuthAuditLog[]> {
-    return await this.databaseService.drizzle
+    return this.databaseService.drizzle
       .select()
       .from(betterAuthAuditLogs)
       .where(eq(betterAuthAuditLogs.userId, userId))

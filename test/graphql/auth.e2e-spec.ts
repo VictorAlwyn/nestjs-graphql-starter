@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-
 import request from 'supertest';
 
 import {
@@ -81,8 +80,8 @@ describe('GraphQL Auth (e2e)', () => {
         // Check for validation error or generic error message
         const errorMessage = response.body.errors[0].message;
         expect(
-          errorMessage.includes('email') ||
-            errorMessage.includes('Bad Request Exception') ||
+          errorMessage.includes('email') ??
+            errorMessage.includes('Bad Request Exception') ??
             errorMessage.includes('Validation failed'),
         ).toBe(true);
       });
@@ -136,8 +135,8 @@ describe('GraphQL Auth (e2e)', () => {
         // Check for duplicate email error or generic error message
         const errorMessage = response.body.errors[0].message;
         expect(
-          errorMessage.includes('email') ||
-            errorMessage.includes('Registration failed') ||
+          errorMessage.includes('email') ??
+            errorMessage.includes('Registration failed') ??
             errorMessage.includes('already exists'),
         ).toBe(true);
       });

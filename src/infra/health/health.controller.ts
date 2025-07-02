@@ -60,7 +60,7 @@ export class HealthController {
   @Get('detailed')
   @HttpCode(HttpStatus.OK)
   async detailedHealth(@Query('includeQueue') includeQueue?: boolean) {
-    return await this.healthService.getDetailedHealth(includeQueue);
+    return this.healthService.getDetailedHealth(includeQueue);
   }
 
   @Get('metrics')

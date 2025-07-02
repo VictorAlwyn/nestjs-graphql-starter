@@ -18,11 +18,11 @@ interface WelcomeEmailProps {
   verificationUrl?: string;
 }
 
-export const WelcomeEmail: React.FC<WelcomeEmailProps> = ({
+export const WelcomeEmail = ({
   userFirstName,
   userEmail,
   verificationUrl,
-}) => {
+}: WelcomeEmailProps) => {
   return (
     <Html>
       <Head />

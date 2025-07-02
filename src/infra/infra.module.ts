@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { BetterAuthModule } from './better-auth/better-auth.module';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
-import { BetterAuthModule } from './better-auth/better-auth.module';
 import { QueueModule } from './queue/queue.module';
 
 @Module({

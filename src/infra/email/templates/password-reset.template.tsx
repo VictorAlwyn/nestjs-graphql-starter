@@ -18,11 +18,11 @@ interface PasswordResetEmailProps {
   expiryTime: string;
 }
 
-export const PasswordResetEmail: React.FC<PasswordResetEmailProps> = ({
+export const PasswordResetEmail = ({
   userFirstName,
   resetUrl,
   expiryTime,
-}) => {
+}: PasswordResetEmailProps) => {
   return (
     <Html>
       <Head />

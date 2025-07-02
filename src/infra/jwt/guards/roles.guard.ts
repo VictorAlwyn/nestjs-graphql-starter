@@ -2,8 +2,10 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
-import { UserRole } from '../../database/schemas/better-auth.schema';
-
+import {
+  UserRole,
+  BetterAuthUser,
+} from '../../database/schemas/better-auth.schema';
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
@@ -19,7 +21,8 @@ export class RolesGuard implements CanActivate {
     }
 
     const ctx = GqlExecutionContext.create(context);
-    const user = ctx.getContext().req.user;
+    const gqlContext = ctx.getContext();
+    const user = gqlContext?.req?.user as BetterAuthUser | undefined;
 
     if (!user) {
       return false;

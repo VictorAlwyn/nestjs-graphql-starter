@@ -1,13 +1,14 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { GraphQLModule } from '@nestjs/graphql';
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { join } from 'path';
+import { Test, TestingModule } from '@nestjs/testing';
 
 import { AppModule } from '../../src/app.module';
 import { DatabaseService } from '../../src/infra/database/database.service';
+import {
+  betterAuthSessions,
+  betterAuthUsers,
+  betterAuthAuditLogs,
+} from '../../src/infra/database/schemas/better-auth.schema';
 
 export interface TestApp {
   app: INestApplication;
@@ -59,20 +60,14 @@ export async function cleanupTestDatabase(
     const drizzle = databaseService.drizzle;
 
     // Clean up test data
-    await drizzle.delete(
-      require('../../src/infra/database/schemas/better-auth.schema')
-        .betterAuthSessions,
-    );
-    await drizzle.delete(
-      require('../../src/infra/database/schemas/better-auth.schema')
-        .betterAuthUsers,
-    );
-    await drizzle.delete(
-      require('../../src/infra/database/schemas/better-auth.schema')
-        .betterAuthAuditLogs,
-    );
+    await drizzle.delete(betterAuthSessions);
+    await drizzle.delete(betterAuthUsers);
+    await drizzle.delete(betterAuthAuditLogs);
   } catch (error) {
-    console.warn('Failed to cleanup test database:', error);
+    // Log warning but don't fail the test
+    if (error instanceof Error) {
+      console.warn('Failed to cleanup test database:', error.message);
+    }
   }
 }
 
@@ -95,9 +90,12 @@ export const TEST_ADMIN_USER = {
 };
 
 // GraphQL test utilities
-export const gql = (strings: TemplateStringsArray, ...args: any[]): string => {
+export const gql = (
+  strings: TemplateStringsArray,
+  ...args: (string | number)[]
+): string => {
   return strings.reduce((result, string, index) => {
-    return result + string + (args[index] || '');
+    return result + string + (args[index]?.toString() || '');
   }, '');
 };
 

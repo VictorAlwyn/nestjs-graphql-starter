@@ -1,11 +1,22 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
-export const CurrentUser = createParamDecorator(
-  (data: unknown, context: ExecutionContext) => {
-    const gqlContext = GqlExecutionContext.create(context);
-    const request = gqlContext.getContext().req;
+import { BetterAuthUser } from '../../infra/database/schemas/better-auth.schema';
 
-    return request?.user;
+export const CurrentUser = createParamDecorator(
+  (data: unknown, context: ExecutionContext): BetterAuthUser | undefined => {
+    const gqlContext = GqlExecutionContext.create(context);
+    const ctx = gqlContext.getContext();
+    if (
+      ctx &&
+      typeof ctx === 'object' &&
+      'req' in ctx &&
+      ctx.req &&
+      typeof ctx.req === 'object' &&
+      'user' in ctx.req
+    ) {
+      return ctx.req.user as BetterAuthUser | undefined;
+    }
+    return undefined;
   },
 );

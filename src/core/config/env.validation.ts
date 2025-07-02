@@ -24,11 +24,8 @@ export const envSchema = z.object({
 export function validateEnv(env: Record<string, unknown>) {
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
-    console.error(
-      '❌ Invalid environment variables:',
-      JSON.stringify(parsed.error.format(), null, 2),
-    );
-    process.exit(1);
+    const errorMessage = `❌ Invalid environment variables: ${JSON.stringify(parsed.error.format(), null, 2)}`;
+    throw new Error(errorMessage);
   }
   return parsed.data;
 }

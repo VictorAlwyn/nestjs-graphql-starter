@@ -7,22 +7,29 @@ import {
 } from '@nestjs/common';
 import { GqlArgumentsHost } from '@nestjs/graphql';
 
+interface ErrorResponse {
+  message: string;
+  code: string;
+  timestamp: string;
+  path: string | undefined;
+  status?: number;
+}
+
+interface HttpExceptionResponse {
+  message?: string;
+  code?: string;
+}
+
 @Catch()
 export class GraphQLExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GraphQLExceptionFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost): ErrorResponse {
     const gqlHost = GqlArgumentsHost.create(host);
     const ctx = gqlHost.getContext();
     const req = ctx?.req;
 
-    let errorResponse: {
-      message: string;
-      code: string;
-      timestamp: string;
-      path: string | undefined;
-      status?: number;
-    } = {
+    let errorResponse: ErrorResponse = {
       message: 'Internal server error',
       code: 'INTERNAL_SERVER_ERROR',
       timestamp: new Date().toISOString(),
@@ -30,7 +37,7 @@ export class GraphQLExceptionFilter implements ExceptionFilter {
     };
 
     if (exception instanceof HttpException) {
-      const response = exception.getResponse() as any;
+      const response = exception.getResponse() as HttpExceptionResponse;
       errorResponse = {
         ...errorResponse,
         message:

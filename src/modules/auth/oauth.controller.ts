@@ -25,7 +25,7 @@ export class OAuthController {
   async handleOAuthCallback(
     @Param('provider') provider: string,
     @Body() body: OAuthCallbackInput,
-    @Req() req: any,
+    @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
     try {
@@ -36,13 +36,13 @@ export class OAuthController {
       );
 
       // Redirect to frontend with token
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
       const redirectUrl = `${frontendUrl}/auth/callback?token=${session.token}&provider=${provider}`;
 
       res.redirect(redirectUrl);
     } catch (_error) {
       // Redirect to frontend with error
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
       const redirectUrl = `${frontendUrl}/auth/error?error=oauth_failed&provider=${provider}`;
 
       res.redirect(redirectUrl);

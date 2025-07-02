@@ -5,7 +5,7 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
+  BUN_VERSION: '1.0.35'
   POSTGRES_DB: test_db
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
@@ -46,14 +46,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Create test environment
         run: |
@@ -96,28 +95,28 @@ jobs:
 
       - name: Setup database
         run: |
-          npm run db:generate
-          npm run db:migrate
+          bun run db:generate
+          bun run db:migrate
 
       - name: Run linting
-        run: npm run lint
+        run: bun run lint
 
       - name: Run unit tests
-        run: npm run test:unit
+        run: bun run test:unit
         env:
           NODE_ENV: test
           DATABASE_URL: ${{ env.DATABASE_URL }}
           REDIS_URL: ${{ env.REDIS_URL }}
 
       - name: Run integration tests
-        run: npm run test:integration
+        run: bun run test:integration
         env:
           NODE_ENV: test
           DATABASE_URL: ${{ env.DATABASE_URL }}
           REDIS_URL: ${{ env.REDIS_URL }}
 
       - name: Build application
-        run: npm run build
+        run: bun run build
 
       - name: Comment PR
         uses: actions/github-script@v7

@@ -8,7 +8,7 @@
 #     branches: [main]
 
 # env:
-#   NODE_VERSION: '18'
+#   BUN_VERSION: '1.0.35'
 
 # jobs:
 #   deploy:
@@ -20,24 +20,23 @@
 #       - name: Checkout code
 #         uses: actions/checkout@v4
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
+#       - name: Setup Bun
+#         uses: oven-sh/setup-bun@v1
 #         with:
-#           node-version: ${{ env.NODE_VERSION }}
-#           cache: 'npm'
+#           bun-version: ${{ env.BUN_VERSION }}
 
 #       - name: Install dependencies
-#         run: npm ci
+#         run: bun install --frozen-lockfile
 
 #       - name: Build application
-#         run: npm run build
+#         run: bun run build
 
 #       - name: Create deployment package
 #         run: |
 #           mkdir -p deployment
 #           cp -r dist/* deployment/
 #           cp package.json deployment/
-#           cp package-lock.json deployment/
+#           cp bun.lockb deployment/
 #           cp .env.example deployment/.env.example
 #           cp docker-compose.yml deployment/
 #           cp docker-compose.test.yml deployment/

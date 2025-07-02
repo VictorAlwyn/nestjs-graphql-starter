@@ -55,7 +55,7 @@ export function createBetterAuthConfig(
     database: {
       type: 'postgresql',
       url:
-        configService.get<string>('DATABASE_URL') ||
+        configService.get<string>('DATABASE_URL') ??
         'postgresql://postgres:postgres@localhost:5432/postgres',
     },
 
@@ -63,21 +63,21 @@ export function createBetterAuthConfig(
     session: {
       type: 'jwt',
       secret:
-        configService.get<string>('JWT_SECRET') ||
+        configService.get<string>('JWT_SECRET') ??
         'your-secret-key-change-in-production',
       expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
     },
 
     // Email configuration
     email: {
-      from: configService.get<string>('EMAIL_FROM') || 'noreply@example.com',
+      from: configService.get<string>('EMAIL_FROM') ?? 'noreply@example.com',
       transport: {
-        host: configService.get<string>('SMTP_HOST') || 'localhost',
-        port: configService.get<number>('SMTP_PORT') || 587,
+        host: configService.get<string>('SMTP_HOST') ?? 'localhost',
+        port: configService.get<number>('SMTP_PORT') ?? 587,
         secure: configService.get<boolean>('SMTP_SECURE', false),
         auth: {
-          user: configService.get<string>('SMTP_USER') || '',
-          pass: configService.get<string>('SMTP_PASS') || '',
+          user: configService.get<string>('SMTP_USER') ?? '',
+          pass: configService.get<string>('SMTP_PASS') ?? '',
         },
       },
     },
@@ -93,13 +93,13 @@ export function createBetterAuthConfig(
       },
       google: {
         enabled: configService.get<boolean>('GOOGLE_OAUTH_ENABLED', false),
-        clientId: configService.get<string>('GOOGLE_CLIENT_ID') || '',
-        clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') || '',
+        clientId: configService.get<string>('GOOGLE_CLIENT_ID') ?? '',
+        clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET') ?? '',
       },
       facebook: {
         enabled: configService.get<boolean>('FACEBOOK_OAUTH_ENABLED', false),
-        clientId: configService.get<string>('FACEBOOK_CLIENT_ID') || '',
-        clientSecret: configService.get<string>('FACEBOOK_CLIENT_SECRET') || '',
+        clientId: configService.get<string>('FACEBOOK_CLIENT_ID') ?? '',
+        clientSecret: configService.get<string>('FACEBOOK_CLIENT_SECRET') ?? '',
       },
     },
 

@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Request } from 'express';
 
 import { BetterAuthService } from '../../infra/better-auth/better-auth.service';
 import {
@@ -14,8 +15,12 @@ import { AuthPayload } from './dto/auth.outputs';
 export class AuthService {
   constructor(private readonly betterAuthService: BetterAuthService) {}
 
-  async login(loginInput: LoginInput, req: any): Promise<AuthPayload> {
+  async login(loginInput: LoginInput, req: Request): Promise<AuthPayload> {
     try {
+      if (!isRequestLike(req)) {
+        throw new Error('Invalid request object');
+      }
+
       const session = await this.betterAuthService.loginWithEmail(
         loginInput.email,
         loginInput.password,
@@ -33,9 +38,13 @@ export class AuthService {
 
   async register(
     registerInput: { email: string; password: string; name: string },
-    req: any,
+    req: Request,
   ): Promise<AuthPayload> {
     try {
+      if (!isRequestLike(req)) {
+        throw new Error('Invalid request object');
+      }
+
       const session = await this.betterAuthService.registerWithEmail(
         registerInput.email,
         registerInput.password,
@@ -55,9 +64,13 @@ export class AuthService {
   async loginWithOAuth(
     provider: string,
     code: string,
-    req: any,
+    req: Request,
   ): Promise<AuthPayload> {
     try {
+      if (!isRequestLike(req)) {
+        throw new Error('Invalid request object');
+      }
+
       const session = await this.betterAuthService.loginWithOAuth(
         provider,
         code,
@@ -73,18 +86,18 @@ export class AuthService {
     }
   }
 
-  async logout(req: any): Promise<void> {
+  async logout(req: Request): Promise<void> {
     await this.betterAuthService.logout(req);
   }
 
-  async requestPasswordReset(email: string, req: any): Promise<void> {
+  async requestPasswordReset(email: string, req: Request): Promise<void> {
     await this.betterAuthService.requestPasswordReset(email, req);
   }
 
   async resetPassword(
     token: string,
     newPassword: string,
-    req: any,
+    req: Request,
   ): Promise<void> {
     await this.betterAuthService.resetPassword(token, newPassword, req);
   }
@@ -113,4 +126,12 @@ export class AuthService {
       updatedAt: betterAuthUser.updatedAt,
     };
   }
+}
+
+function isRequestLike(
+  obj: unknown,
+): obj is { ip?: string; headers?: Record<string, string> } {
+  return (
+    typeof obj === 'object' && obj !== null && ('ip' in obj || 'headers' in obj)
+  );
 }

@@ -72,7 +72,7 @@ export class UserService {
   }
 
   async findAll(): Promise<BetterAuthUser[]> {
-    return await this.db.drizzle.select().from(betterAuthUsers);
+    return this.db.drizzle.select().from(betterAuthUsers);
   }
 
   async getUserById(id: string): Promise<UserModel> {

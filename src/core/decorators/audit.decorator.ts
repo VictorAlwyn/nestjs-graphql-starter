@@ -5,10 +5,10 @@ import { AuditLogAction } from '../../infra/database/schemas/audit-logs.schema';
 export interface AuditOptions {
   action: AuditLogAction;
   resource?: string;
-  resourceId?: string | ((args: any[]) => string);
+  resourceId?: string | ((args: unknown[]) => string);
   metadata?:
     | Record<string, unknown>
-    | ((args: any[]) => Record<string, unknown>);
+    | ((args: unknown[]) => Record<string, unknown>);
 }
 
 export const AUDIT_KEY = 'audit';

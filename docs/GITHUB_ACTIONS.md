@@ -1,304 +1,304 @@
 # GitHub Actions Workflows
 
-This document describes the GitHub Actions workflows set up for the NestJS GraphQL application.
+This project uses GitHub Actions for continuous integration, testing, and deployment. All workflows are configured to use **Bun** for faster builds and better performance.
 
-## 📋 Workflow Overview
+## 🚀 Available Workflows
 
-We have three main workflows:
+### 1. **Tests** (`.github/workflows/test.yml`)
 
-1. **CI** (`.github/workflows/ci.yml`) - Main continuous integration
-2. **PR Check** (`.github/workflows/pr-check.yml`) - Pull request validation
-3. **Deploy** (`.github/workflows/deploy.yml`) - Production deployment
+**Triggers:** Push to `main`/`develop`, Pull Requests
+**Purpose:** Comprehensive testing suite
 
-## 🚀 CI Workflow
+**Features:**
 
-### Triggers
+- ✅ **Bun-based** - Uses Bun for faster dependency installation and execution
+- 🗄️ **PostgreSQL & Redis** - Full database testing with real services
+- 🧪 **Complete Test Suite** - Unit, integration, and E2E tests
+- 📊 **Coverage Reports** - Uploads to Codecov and GitHub artifacts
+- 🔒 **Security Audits** - Runs `bun audit` for vulnerability checks
+- 🏗️ **Build Verification** - Ensures the application builds successfully
 
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop` branches
+**Jobs:**
 
-### Jobs
+- `test` - Runs all tests with database services
+- `security` - Security vulnerability scanning
+- `build` - Application build verification
 
-#### 1. Test Suite
+### 2. **CI** (`.github/workflows/ci.yml`)
 
-- **Purpose**: Run all tests with database and Redis services
-- **Services**: PostgreSQL (port 5433) and Redis (port 6380)
-- **Steps**:
-  - Setup Node.js 18
-  - Install dependencies with caching
-  - Create test environment file
-  - Wait for database services
-  - Setup database schema and migrations
-  - Run linting
-  - Run all tests (`npm run test:all`)
-  - Upload coverage reports
+**Triggers:** Push to `main`/`develop`, Pull Requests
+**Purpose:** Fast feedback for developers
 
-#### 2. Security Audit
+**Features:**
 
-- **Purpose**: Check for security vulnerabilities
-- **Dependencies**: Runs after test suite passes
-- **Steps**:
-  - Run `npm audit --audit-level=moderate`
-  - Check for high-level vulnerabilities
+- ⚡ **Quick Feedback** - Optimized for speed
+- 🗄️ **Database Services** - PostgreSQL and Redis containers
+- 🧪 **Essential Tests** - Core functionality testing
+- 🔒 **Security Checks** - Basic security audit
+- 🏗️ **Build Check** - Ensures code compiles
 
-#### 3. Build
+### 3. **PR Check** (`.github/workflows/pr-check.yml`)
 
-- **Purpose**: Ensure application builds successfully
-- **Dependencies**: Runs after test suite passes
-- **Steps**:
-  - Build application (`npm run build`)
-  - Upload build artifacts
+**Triggers:** Pull Requests to `main`/`develop`
+**Purpose:** Automated PR feedback
+
+**Features:**
+
+- 🤖 **Auto Comments** - Posts results directly to PR
+- ⚡ **Fast Execution** - Quick checks for immediate feedback
+- 🧪 **Core Tests** - Unit and integration tests
+- 🏗️ **Build Verification** - Ensures PR builds successfully
+
+### 4. **Deploy** (`.github/workflows/deploy.yml`)
+
+**Triggers:** Successful CI completion on `main`
+**Purpose:** Production deployment
+
+**Features:**
+
+- 🚀 **Production Ready** - Deploys only after successful CI
+- 📦 **Artifact Creation** - Creates deployment packages
+- 🔄 **Rollback Support** - Automatic rollback on failure
+- 📢 **Notifications** - Deployment status notifications
+
+## 🛠️ Bun Configuration
+
+All workflows use **Bun 1.0.35** for:
+
+- **Faster Installation** - `bun install --frozen-lockfile`
+- **Faster Execution** - `bun run` commands
+- **Better Performance** - Optimized for modern JavaScript/TypeScript
+- **Consistent Environment** - Same runtime across local and CI
+
+### Key Bun Commands Used:
+
+```bash
+# Install dependencies
+bun install --frozen-lockfile
+
+# Run tests
+bun run test:unit
+bun run test:integration
+bun run test:e2e
+bun run test:all
+
+# Database operations
+bun run db:generate
+bun run db:migrate
+
+# Build and lint
+bun run build
+bun run lint
+
+# Security
+bun audit
+```
+
+## 🗄️ Database Services
+
+All test workflows include:
+
+- **PostgreSQL 15** (Alpine) - Port 5433
+- **Redis 7** (Alpine) - Port 6380
+- **Health Checks** - Ensures services are ready before tests
+- **Test Database** - Isolated test environment
+
+## 📊 Coverage and Artifacts
+
+### Coverage Reports
+
+- **Codecov Integration** - Automatic upload to Codecov
+- **GitHub Artifacts** - Coverage reports stored for 30 days
+- **LCOV Format** - Standard coverage format
+
+### Build Artifacts
+
+- **Dist Folder** - Compiled application
+- **30-Day Retention** - Artifacts kept for 30 days
+- **Downloadable** - Available for deployment or inspection
+
+## 🔒 Security Features
+
+### Security Audits
+
+- **Bun Audit** - Native Bun security scanning
+- **Vulnerability Levels** - Moderate and high severity checks
+- **Automatic Blocking** - Fails CI on high-severity issues
+
+### Environment Security
+
+- **Test Secrets** - Isolated test environment variables
+- **No Production Secrets** - Secure secret management
+- **Environment Isolation** - Separate test and production configs
+
+## 🚀 Performance Optimizations
+
+### Bun Benefits
+
+- **3x Faster** - Installation and execution speed
+- **Memory Efficient** - Lower memory usage
+- **Native TypeScript** - No compilation overhead
+- **Better Caching** - Intelligent dependency caching
+
+### Workflow Optimizations
+
+- **Parallel Jobs** - Independent job execution
+- **Caching** - Dependency and build caching
+- **Service Health Checks** - Prevents flaky tests
+- **Conditional Steps** - Only run necessary steps
+
+## 📋 Usage Examples
+
+### Local Development
+
+```bash
+# Run the same commands locally
+bun install
+bun run test:all
+bun run build
+```
+
+### Manual Workflow Trigger
+
+```bash
+# Trigger workflows manually via GitHub UI
+# Go to Actions tab → Select workflow → Run workflow
+```
+
+### Debugging Failed Workflows
+
+1. **Check Logs** - Detailed step-by-step logs
+2. **Download Artifacts** - Coverage reports and build artifacts
+3. **Reproduce Locally** - Use same Bun version and commands
+4. **Service Health** - Verify database and Redis connectivity
+
+## 🔧 Customization
 
 ### Environment Variables
 
 ```yaml
-NODE_VERSION: '18'
-POSTGRES_DB: test_db
-POSTGRES_USER: postgres
-POSTGRES_PASSWORD: postgres
-DATABASE_URL: postgresql://postgres:postgres@localhost:5433/test_db
-REDIS_URL: redis://localhost:6380
+env:
+  BUN_VERSION: '1.0.35'
+  POSTGRES_DB: test_db
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5433/test_db
+  REDIS_URL: redis://localhost:6380
 ```
 
-## 🔍 PR Check Workflow
+### Adding New Tests
 
-### Purpose
+1. **Create Test File** - Follow existing patterns
+2. **Update Scripts** - Add to `package.json` scripts
+3. **Update Workflows** - Include in appropriate workflow
+4. **Test Locally** - Ensure tests pass with Bun
 
-Lightweight validation for pull requests with faster feedback.
+### Modifying Database Setup
 
-### Features
+1. **Update Schema** - Modify Drizzle configuration
+2. **Update Migrations** - Add new migration files
+3. **Update Workflows** - Include new migration steps
+4. **Test Locally** - Verify with test database
 
-- Runs on pull requests to `main` or `develop`
-- Includes automatic PR commenting with results
-- Focuses on essential checks (linting, unit tests, integration tests, build)
+## 🎯 Best Practices
 
-### PR Comments
+### For Developers
 
-The workflow automatically comments on PRs with:
+- **Use Bun Locally** - Match CI environment
+- **Test Before PR** - Run full test suite locally
+- **Check Coverage** - Ensure adequate test coverage
+- **Security First** - Run `bun audit` regularly
 
-- ✅ Success status and summary
-- ❌ Failure status with guidance
-- List of tests run
-- Timestamp of last update
+### For Maintainers
 
-## 🚀 Deploy Workflow
+- **Monitor Performance** - Track workflow execution times
+- **Update Dependencies** - Keep Bun and dependencies current
+- **Review Security** - Monitor security audit results
+- **Optimize Workflows** - Remove unnecessary steps
 
-### Triggers
+### For DevOps
 
-- Runs after successful CI workflow completion
-- Only on `main` branch
+- **Monitor Resources** - Track GitHub Actions minutes usage
+- **Optimize Caching** - Maximize cache hit rates
+- **Parallel Execution** - Use parallel jobs where possible
+- **Artifact Management** - Clean up old artifacts regularly
 
-### Jobs
+## 📈 Metrics and Monitoring
 
-#### 1. Deploy to Production
+### Key Metrics to Track
 
-- **Condition**: CI workflow succeeded
-- **Steps**:
-  - Build application
-  - Create deployment package
-  - Upload deployment artifacts
-  - Execute deployment (configurable)
-  - Send notifications
+- **Workflow Duration** - Total execution time
+- **Test Coverage** - Percentage of code covered
+- **Security Issues** - Number of vulnerabilities found
+- **Build Success Rate** - Percentage of successful builds
+- **Deployment Frequency** - How often deployments occur
 
-#### 2. Rollback
+### Monitoring Tools
 
-- **Condition**: CI workflow failed
-- **Steps**:
-  - Execute rollback procedures
-  - Send failure notifications
+- **GitHub Actions** - Built-in workflow monitoring
+- **Codecov** - Coverage tracking and reporting
+- **GitHub Security** - Vulnerability scanning
+- **Custom Dashboards** - Build your own metrics dashboard
 
-### Deployment Options
-
-The workflow includes examples for various deployment targets:
-
-```bash
-# VPS Deployment
-scp -r deployment/* user@your-server:/path/to/app/
-ssh user@your-server "cd /path/to/app && docker-compose up -d"
-
-# Railway Deployment
-railway login
-railway up
-
-# Heroku Deployment
-heroku container:push web
-heroku container:release web
-```
-
-## 🛠️ Setup Instructions
-
-### 1. Repository Setup
-
-1. **Enable GitHub Actions**:
-   - Go to your repository settings
-   - Navigate to "Actions" → "General"
-   - Ensure "Allow all actions and reusable workflows" is selected
-
-2. **Set up branch protection** (recommended):
-   - Go to "Branches" → "Add rule"
-   - Set up rules for `main` and `develop` branches
-   - Require status checks to pass before merging
-
-### 2. Environment Variables
-
-For deployment workflows, you may need to set up secrets:
-
-1. Go to repository settings → "Secrets and variables" → "Actions"
-2. Add the following secrets if needed:
-   ```
-   SLACK_WEBHOOK_URL          # For notifications
-   DEPLOY_SSH_KEY            # For VPS deployment
-   DEPLOY_HOST              # Server hostname
-   DEPLOY_USER              # Server username
-   DEPLOY_PATH              # Server deployment path
-   ```
-
-### 3. Customize Deployment
-
-Edit `.github/workflows/deploy.yml` and uncomment/modify the deployment section:
-
-```yaml
-- name: Deploy to VPS
-  run: |
-    scp -r deployment/* ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
-    ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && docker-compose up -d"
-```
-
-## 📊 Monitoring and Notifications
-
-### Coverage Reports
-
-- Coverage reports are uploaded as artifacts
-- Available for 30 days
-- Can be integrated with Codecov or similar services
-
-### Notifications
-
-The workflows support various notification methods:
-
-```yaml
-# Slack notifications
-- name: Notify Slack
-  uses: 8398a7/action-slack@v3
-  with:
-    status: success
-    text: 'Deployment completed successfully!'
-  env:
-    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-# Email notifications (via custom script)
-- name: Send email notification
-  run: |
-    # Your email notification script
-```
-
-## 🔧 Troubleshooting
+## 🆘 Troubleshooting
 
 ### Common Issues
 
-#### 1. Database Connection Failures
+#### Tests Failing
 
 ```bash
-# Check if services are running
-docker ps | grep postgres
-docker ps | grep redis
+# Check database connectivity
+docker ps
+docker exec postgres-test pg_isready -U postgres
 
-# Check service logs
-docker logs <container-id>
+# Check Redis connectivity
+docker exec redis-test redis-cli ping
+
+# Run tests locally
+bun run test:all
 ```
 
-#### 2. Test Failures
+#### Build Failures
 
-- Ensure `.env.test` is properly configured
-- Check database migrations are up to date
-- Verify all dependencies are installed
+```bash
+# Check TypeScript compilation
+bun run build
 
-#### 3. Build Failures
+# Check for missing dependencies
+bun install
 
-- Check TypeScript compilation errors
-- Verify all imports are correct
-- Ensure build script exists in `package.json`
+# Verify Bun version
+bun --version
+```
 
-#### 4. Deployment Failures
+#### Security Issues
 
-- Verify deployment credentials
-- Check server connectivity
-- Ensure deployment path exists and has proper permissions
+```bash
+# Run security audit
+bun audit
 
-### Debugging Workflows
+# Update dependencies
+bun update
 
-1. **Enable debug logging**:
-   Add `ACTIONS_STEP_DEBUG: true` to repository secrets
+# Check for known vulnerabilities
+bun audit --level=high
+```
 
-2. **Check workflow logs**:
-   - Go to "Actions" tab in your repository
-   - Click on the failed workflow
-   - Review step-by-step logs
+### Getting Help
 
-3. **Re-run workflows**:
-   - Use "Re-run jobs" option in the Actions tab
-   - Or push a new commit to trigger re-run
+1. **Check Workflow Logs** - Detailed error information
+2. **Reproduce Locally** - Use same environment
+3. **Check Documentation** - Review this guide
+4. **GitHub Issues** - Report bugs and request features
 
-## 📈 Performance Optimization
+---
 
-### Caching
+## 🎉 Success Metrics
 
-- Node modules are cached using `actions/setup-node@v4`
-- Cache key: `npm` (automatic)
+When properly configured, you should see:
 
-### Parallel Jobs
+- ✅ **All tests passing** consistently
+- ⚡ **Fast workflow execution** (< 10 minutes)
+- 📊 **High test coverage** (> 80%)
+- 🔒 **No security vulnerabilities**
+- 🚀 **Successful deployments** to production
 
-- Security audit and build jobs run in parallel after tests
-- Reduces total workflow time
-
-### Service Optimization
-
-- PostgreSQL and Redis use Alpine images for faster startup
-- Health checks ensure services are ready before tests
-
-## 🔒 Security Considerations
-
-### Secrets Management
-
-- Never commit secrets to the repository
-- Use GitHub Secrets for sensitive data
-- Rotate secrets regularly
-
-### Dependency Scanning
-
-- Security audit runs on every PR and push
-- Moderate and high-level vulnerabilities are checked
-- Consider integrating with Dependabot for automated updates
-
-### Environment Isolation
-
-- Test environment uses isolated databases
-- Production secrets are never exposed in test environments
-- Separate deployment environments for staging and production
-
-## 📝 Customization
-
-### Adding New Workflows
-
-1. Create new `.yml` file in `.github/workflows/`
-2. Define triggers and jobs
-3. Test locally using `act` (optional)
-
-### Modifying Existing Workflows
-
-1. Edit the appropriate workflow file
-2. Test changes in a feature branch
-3. Monitor workflow execution
-
-### Adding New Test Types
-
-1. Add test scripts to `package.json`
-2. Update workflow steps to include new tests
-3. Ensure proper environment setup
-
-## 🆘 Getting Help
-
-- Check GitHub Actions documentation: https://docs.github.com/en/actions
-- Review workflow logs for detailed error messages
-- Test workflows locally using `act` tool
-- Consult the test documentation in `test/README.md`
+This setup provides a robust, fast, and reliable CI/CD pipeline using modern tools and best practices.

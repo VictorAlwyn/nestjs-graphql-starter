@@ -45,7 +45,7 @@ export class BetterAuthGuard implements CanActivate {
       request.session = session;
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Authentication failed');
     }
   }

@@ -12,14 +12,38 @@ import {
   AuditLogAction,
   AuditLogStatus,
 } from '../../infra/database/schemas/audit-logs.schema';
+import { BetterAuthUser } from '../../infra/database/schemas/better-auth.schema';
 
 import { AuditService } from './audit.service';
+
+interface GraphQLContext {
+  req?: {
+    user?: BetterAuthUser;
+    ip?: string;
+    connection?: {
+      remoteAddress?: string;
+    };
+    headers?: Record<string, string>;
+    body?: {
+      variables?: Record<string, unknown>;
+    };
+  };
+}
+
+interface GraphQLInfo {
+  operation?: {
+    name?: {
+      value?: string;
+    };
+    operation?: string;
+  };
+}
 
 @Injectable()
 export class AuditGraphQLInterceptor implements NestInterceptor {
   constructor(private readonly auditService: AuditService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const gqlContext = GqlExecutionContext.create(context);
     const info = gqlContext.getInfo();
     const ctx = gqlContext.getContext();
@@ -36,7 +60,7 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
     const ipAddress = this.getIpAddress(ctx);
     const userAgent = ctx.req?.headers?.['user-agent'];
     const requestId =
-      ctx.req?.headers?.['x-request-id'] || this.generateRequestId();
+      ctx.req?.headers?.['x-request-id'] ?? this.generateRequestId();
 
     // Determine the appropriate audit action
     const auditAction = this.getAuditAction(operationType);
@@ -45,15 +69,13 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
-        const duration = Date.now() - startTime;
-
         // Log successful operation
         if (
           auditAction === AuditLogAction.GRAPHQL_QUERY ||
           auditAction === AuditLogAction.GRAPHQL_MUTATION ||
           auditAction === AuditLogAction.GRAPHQL_SUBSCRIPTION
         ) {
-          this.auditService.logGraphQLOperation(
+          void this.auditService.logGraphQLOperation(
             auditAction,
             operationName,
             operationType,
@@ -67,7 +89,7 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
           );
         } else {
           // Use createAuditLog for custom actions
-          this.auditService.createAuditLog({
+          void this.auditService.createAuditLog({
             action: auditAction,
             resource: 'graphql',
             context: {
@@ -84,11 +106,11 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
           });
         }
       }),
-      catchError((error) => {
+      catchError((error: Error) => {
         const duration = Date.now() - startTime;
 
         // Log failed operation
-        this.auditService.createAuditLog({
+        void this.auditService.createAuditLog({
           action: auditAction,
           resource: 'graphql',
           status: AuditLogStatus.FAILURE,
@@ -112,20 +134,20 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
     );
   }
 
-  private getOperationName(info: any): string {
-    return info?.operation?.name?.value || 'Anonymous';
+  private getOperationName(info: GraphQLInfo): string {
+    return info?.operation?.name?.value ?? 'Anonymous';
   }
 
-  private getOperationType(info: any): string {
-    return info?.operation?.operation || 'unknown';
+  private getOperationType(info: GraphQLInfo): string {
+    return info?.operation?.operation ?? 'unknown';
   }
 
-  private getVariables(ctx: any): Record<string, unknown> {
-    return ctx?.req?.body?.variables || {};
+  private getVariables(ctx: GraphQLContext): Record<string, unknown> {
+    return ctx?.req?.body?.variables ?? {};
   }
 
-  private getIpAddress(ctx: any): string | undefined {
-    return ctx?.req?.ip || ctx?.req?.connection?.remoteAddress;
+  private getIpAddress(ctx: GraphQLContext): string | undefined {
+    return ctx?.req?.ip ?? ctx?.req?.connection?.remoteAddress;
   }
 
   private getAuditAction(operationType: string): AuditLogAction {

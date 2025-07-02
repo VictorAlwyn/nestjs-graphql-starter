@@ -10,6 +10,11 @@ interface EmailJobData {
   from?: string;
 }
 
+interface Job {
+  id?: string;
+  data?: EmailJobData;
+}
+
 interface EmailJobResult {
   success: boolean;
   recipient: string;
@@ -43,7 +48,7 @@ export class EmailQueueWorker {
       );
     }
 
-    const port = Number(this.config.get<string>('SMTP_PORT') || 587);
+    const port = Number(this.config.get<string>('SMTP_PORT') ?? 587);
     const secure = this.config.get<string>('SMTP_SECURE') === 'true';
 
     this.transporter = nodemailer.createTransport({
@@ -54,10 +59,10 @@ export class EmailQueueWorker {
     });
   }
 
-  async processEmailJob(job: any): Promise<EmailJobResult> {
+  async processEmailJob(job: Job): Promise<EmailJobResult> {
     try {
-      const jobData: EmailJobData = job?.data || {};
-      const { to, subject, html, body, from } = jobData;
+      const jobData = job?.data ?? {};
+      const { to, subject, html, body, from } = jobData as EmailJobData;
 
       if (!to) {
         throw new Error(
@@ -70,16 +75,16 @@ export class EmailQueueWorker {
       }
 
       this.logger.log(`Processing email job for: ${to}`, {
-        jobId: job?.id || 'unknown-id',
-        subject: subject,
+        jobId: job?.id ?? 'unknown-id',
+        subject,
       });
 
-      const content = html || body || '';
+      const content = html ?? body ?? '';
 
       await this.transporter.sendMail({
         from:
-          from ||
-          this.config.get<string>('EMAIL_FROM') ||
+          from ??
+          this.config.get<string>('EMAIL_FROM') ??
           'no-reply@example.com',
         to,
         subject,
@@ -89,22 +94,22 @@ export class EmailQueueWorker {
       const result: EmailJobResult = {
         success: true,
         recipient: to,
-        subject: subject,
+        subject,
         sentAt: new Date().toISOString(),
-        jobId: job?.id || 'unknown',
+        jobId: job?.id ?? 'unknown',
       };
 
       this.logger.log(`Email sent successfully to: ${to}`, {
-        jobId: job?.id || 'unknown-id',
+        jobId: job?.id ?? 'unknown-id',
         sentAt: result.sentAt,
       });
 
       return result;
     } catch (error) {
       this.logger.error(
-        `Failed to send email to: ${job?.data?.to || 'unknown'}`,
+        `Failed to send email to: ${job?.data?.to ?? 'unknown'}`,
         {
-          jobId: job?.id || 'unknown-id',
+          jobId: job?.id ?? 'unknown-id',
           message: error.message,
           recipient: job?.data?.to,
           subject: job?.data?.subject,

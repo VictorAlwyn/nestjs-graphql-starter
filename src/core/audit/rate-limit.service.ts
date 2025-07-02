@@ -103,7 +103,7 @@ export class RateLimitService {
           ),
         );
 
-      const currentCount = result[0]?.count || 0;
+      const currentCount = result[0]?.count ?? 0;
       const isAllowed = currentCount < config.maxRequests;
       const remaining = Math.max(0, config.maxRequests - currentCount);
       const resetTime = new Date(Date.now() + config.windowMs);
@@ -112,7 +112,7 @@ export class RateLimitService {
       if (!isAllowed) {
         await this.auditService.logRateLimitEvent(
           AuditLogAction.RATE_LIMIT_EXCEEDED,
-          resource || action,
+          resource ?? action,
           { id: userId } as BetterAuthUser,
           {
             metadata: {
@@ -152,7 +152,7 @@ export class RateLimitService {
   ): RateLimitConfig {
     const key = resource ? `${action}_${resource}` : action;
     const defaultConfig =
-      this.defaultConfigs.get(key) || this.defaultConfigs.get(action);
+      this.defaultConfigs.get(key) ?? this.defaultConfigs.get(action);
 
     if (!defaultConfig) {
       // Default fallback configuration
@@ -202,7 +202,7 @@ export class RateLimitService {
             ),
           );
 
-        const currentCount = result[0]?.count || 0;
+        const currentCount = result[0]?.count ?? 0;
         stats[key] = {
           current: currentCount,
           limit: config.maxRequests,
@@ -238,7 +238,7 @@ export class RateLimitService {
       // rather than deleting them for audit purposes
       await this.auditService.logRateLimitEvent(
         AuditLogAction.RATE_LIMIT_RESET,
-        action || 'all',
+        action ?? 'all',
         { id: userId } as BetterAuthUser,
         {
           metadata: { resetBy: 'admin' },

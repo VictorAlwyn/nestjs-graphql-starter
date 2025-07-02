@@ -4,6 +4,36 @@ import * as PgBoss from 'pg-boss';
 
 import { QUEUE_NAMES } from '../../queue/types/queue.types';
 
+interface JobData {
+  id: string;
+  data?: Record<string, unknown>;
+}
+
+interface HealthCheckResult {
+  database: string;
+  cache: string;
+  external_apis: string;
+  timestamp: string;
+}
+
+interface CleanupResult {
+  cleaned_records: number;
+  freed_space: string;
+  timestamp: string;
+}
+
+interface ProcessingResult {
+  processed_items: number;
+  duration: string;
+  timestamp: string;
+}
+
+interface ReportResult {
+  report_id: string;
+  pages: number;
+  generated_at: string;
+}
+
 @Injectable()
 export class CronService implements OnModuleInit {
   private readonly logger = new Logger(CronService.name);
@@ -11,53 +41,45 @@ export class CronService implements OnModuleInit {
   constructor(@Inject('PG_BOSS') private readonly boss: PgBoss) {}
 
   async onModuleInit() {
+    this.logger.log('Initializing CronService...');
     await this.setupPgBossWorkers();
+    this.logger.log('CronService initialized successfully');
   }
 
   // @nestjs/schedule triggers that enqueue jobs to pg-boss
   @Cron('0 */6 * * *') // Every 6 hours
   async scheduleHealthCheck() {
-    this.logger.log('Scheduling health check job...');
-    await this.boss.send(QUEUE_NAMES.HEALTH_CHECK, {
-      scheduledAt: new Date().toISOString(),
-      type: 'health-check',
-    });
+    const jobId = await this.boss.send(QUEUE_NAMES.HEALTH_CHECK);
+    this.logger.log(`Health check scheduled with job ID: ${jobId}`);
+    return jobId;
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async scheduleDailyCleanup() {
-    this.logger.log('Scheduling daily cleanup job...');
-    await this.boss.send(QUEUE_NAMES.DAILY_CLEANUP, {
-      scheduledAt: new Date().toISOString(),
-      type: 'daily-cleanup',
-    });
+    const jobId = await this.boss.send(QUEUE_NAMES.DAILY_CLEANUP);
+    this.logger.log(`Daily cleanup scheduled with job ID: ${jobId}`);
+    return jobId;
   }
 
   @Cron('0 2 * * *') // Daily at 2 AM
-  async scheduleHeavyProcessing() {
-    this.logger.log('Scheduling heavy processing job...');
-    await this.boss.send(QUEUE_NAMES.HEAVY_PROCESSING, {
-      scheduledAt: new Date().toISOString(),
-      type: 'heavy-processing',
-    });
+  async scheduleHeavyProcessing(data?: Record<string, unknown>) {
+    const jobId = await this.boss.send(QUEUE_NAMES.HEAVY_PROCESSING, data);
+    this.logger.log(`Heavy processing scheduled with job ID: ${jobId}`);
+    return jobId;
   }
 
   @Cron('0 0 1 * *') // Monthly on the 1st
-  async scheduleMonthlyReport() {
-    this.logger.log('Scheduling monthly report job...');
-    await this.boss.send(QUEUE_NAMES.MONTHLY_REPORT, {
-      scheduledAt: new Date().toISOString(),
-      type: 'monthly-report',
-    });
+  async scheduleMonthlyReport(data?: Record<string, unknown>) {
+    const jobId = await this.boss.send(QUEUE_NAMES.MONTHLY_REPORT, data);
+    this.logger.log(`Monthly report scheduled with job ID: ${jobId}`);
+    return jobId;
   }
 
   @Cron('*/5 * * * *') // Every 5 minutes (keeping the original sample for demo)
   async scheduleSampleJob() {
-    this.logger.log('Scheduling sample cron job...');
-    await this.boss.send(QUEUE_NAMES.CRON_SAMPLE, {
-      scheduledAt: new Date().toISOString(),
-      type: 'sample-cron',
-    });
+    const jobId = await this.boss.send(QUEUE_NAMES.CRON_SAMPLE);
+    this.logger.log(`Sample job scheduled with job ID: ${jobId}`);
+    return jobId;
   }
 
   // pg-boss workers that actually execute the jobs
@@ -75,13 +97,13 @@ export class CronService implements OnModuleInit {
     try {
       await this.boss.createQueue(jobName);
 
-      await this.boss.work(jobName, async (job: any) => {
+      await this.boss.work(jobName, async (job: JobData) => {
         this.logger.log(`Executing sample cron job: ${job.id}`);
 
         const result = {
           executedAt: new Date().toISOString(),
           jobId: job.id || 'unknown',
-          jobName: jobName,
+          jobName,
           message: 'Sample cron job executed successfully via pg-boss',
         };
 
@@ -101,7 +123,7 @@ export class CronService implements OnModuleInit {
     try {
       await this.boss.createQueue(jobName);
 
-      await this.boss.work(jobName, async (job: any) => {
+      await this.boss.work(jobName, async (job: JobData) => {
         this.logger.log(`Executing health check job: ${job.id}`);
 
         // Your actual health check logic here
@@ -126,7 +148,7 @@ export class CronService implements OnModuleInit {
     try {
       await this.boss.createQueue(jobName);
 
-      await this.boss.work(jobName, async (job: any) => {
+      await this.boss.work(jobName, async (job: JobData) => {
         this.logger.log(`Executing daily cleanup job: ${job.id}`);
 
         // Your cleanup logic here
@@ -151,7 +173,7 @@ export class CronService implements OnModuleInit {
     try {
       await this.boss.createQueue(jobName);
 
-      await this.boss.work(jobName, async (job: any) => {
+      await this.boss.work(jobName, async (job: JobData) => {
         this.logger.log(`Executing heavy processing job: ${job.id}`);
 
         // Your heavy processing logic here
@@ -176,7 +198,7 @@ export class CronService implements OnModuleInit {
     try {
       await this.boss.createQueue(jobName);
 
-      await this.boss.work(jobName, async (job: any) => {
+      await this.boss.work(jobName, async (job: JobData) => {
         this.logger.log(`Executing monthly report job: ${job.id}`);
 
         // Your report generation logic here
@@ -193,7 +215,7 @@ export class CronService implements OnModuleInit {
   }
 
   // Your actual business logic methods
-  private async performHealthCheck(): Promise<any> {
+  private async performHealthCheck(): Promise<HealthCheckResult> {
     // Simulate health check logic
     await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
     return {
@@ -204,7 +226,7 @@ export class CronService implements OnModuleInit {
     };
   }
 
-  private async performDailyCleanup(): Promise<any> {
+  private async performDailyCleanup(): Promise<CleanupResult> {
     // Simulate cleanup logic
     await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
     return {
@@ -214,7 +236,9 @@ export class CronService implements OnModuleInit {
     };
   }
 
-  private async performHeavyProcessing(_data: any): Promise<any> {
+  private async performHeavyProcessing(
+    _data?: Record<string, unknown>,
+  ): Promise<ProcessingResult> {
     // Simulate heavy processing logic
     await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 second delay
     return {
@@ -224,7 +248,9 @@ export class CronService implements OnModuleInit {
     };
   }
 
-  private async generateMonthlyReport(_data: any): Promise<any> {
+  private async generateMonthlyReport(
+    _data?: Record<string, unknown>,
+  ): Promise<ReportResult> {
     // Simulate report generation logic
     await new Promise((resolve) => setTimeout(resolve, 3000)); // 3 second delay
     return {
@@ -235,20 +261,26 @@ export class CronService implements OnModuleInit {
   }
 
   // Utility methods for manual job scheduling
-  async scheduleJobNow(jobName: string, data?: any): Promise<string | null> {
+  async scheduleJobNow(
+    jobName: string,
+    data?: Record<string, unknown>,
+  ): Promise<string | null> {
     return await this.boss.send(jobName, data);
   }
 
   async scheduleJobLater(
     jobName: string,
-    data: any,
+    data: Record<string, unknown>,
     delayInSeconds: number,
   ): Promise<string | null> {
     return await this.boss.send(jobName, data, { startAfter: delayInSeconds });
   }
 
   // Method to schedule additional custom cron jobs
-  async scheduleCustomCronJob(jobName: string, data?: any): Promise<void> {
+  async scheduleCustomCronJob(
+    jobName: string,
+    data?: Record<string, unknown>,
+  ): Promise<void> {
     try {
       await this.boss.send(jobName, data);
       this.logger.log(`Scheduled custom job "${jobName}"`);
@@ -269,7 +301,10 @@ export class CronService implements OnModuleInit {
   }
 
   // Get job status and monitoring
-  async getJobStatus(queueName: string, jobId: string): Promise<any> {
+  async getJobStatus(
+    queueName: string,
+    jobId: string,
+  ): Promise<Record<string, unknown> | null> {
     try {
       return await this.boss.getJobById(queueName, jobId);
     } catch (error) {
