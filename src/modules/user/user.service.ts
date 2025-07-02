@@ -1,24 +1,18 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
 import { AppLoggerService } from '../../core/logger/logger.service';
 import { DatabaseService } from '../../infra/database/database.service';
 import {
-  NewUser,
-  User,
-  users,
+  NewBetterAuthUser,
+  BetterAuthUser,
+  betterAuthUsers,
   UserRole,
-} from '../../infra/database/schemas/users.schema';
+} from '../../infra/database/schemas/better-auth.schema';
 
-import { RegisterInput } from './dto/user.input';
 import { UserModel } from './models/user.model';
 
-function toUserModel(user: User): UserModel {
+function toUserModel(user: BetterAuthUser): UserModel {
   return {
     id: user.id,
     email: user.email,
@@ -35,59 +29,32 @@ export class UserService {
   constructor(
     private readonly db: DatabaseService,
     private readonly logger: AppLoggerService,
-  ) { }
+  ) {}
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<BetterAuthUser | null> {
     const [user] = await this.db.drizzle
       .select()
-      .from(users)
-      .where(eq(users.id, id));
+      .from(betterAuthUsers)
+      .where(eq(betterAuthUsers.id, id));
     return user || null;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<BetterAuthUser | null> {
     const [user] = await this.db.drizzle
       .select()
-      .from(users)
-      .where(eq(users.email, email));
+      .from(betterAuthUsers)
+      .where(eq(betterAuthUsers.email, email));
     return user || null;
   }
 
-  async createUser(input: RegisterInput): Promise<UserModel> {
-    const existingUser = await this.findByEmail(input.email);
-    if (existingUser) {
-      this.logger.warn(
-        `Attempted to create user with existing email: ${input.email}`,
-      );
-      throw new ConflictException('User with this email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(input.password, 10);
-
-    const user = await this.create({
-      email: input.email,
-      name: input.name,
-      password: hashedPassword,
-      role: UserRole.USER,
-    });
-
-    this.logger.log(`User created successfully: ${user.id}`);
-    return this.getUserById(user.id);
-  }
-
-  private async create(userData: NewUser): Promise<User> {
-    const [user] = await this.db.drizzle
-      .insert(users)
-      .values(userData)
-      .returning();
-    return user;
-  }
-
-  async update(id: string, userData: Partial<NewUser>): Promise<User> {
+  async update(
+    id: string,
+    userData: Partial<NewBetterAuthUser>,
+  ): Promise<BetterAuthUser> {
     const [updatedUser] = await this.db.drizzle
-      .update(users)
+      .update(betterAuthUsers)
       .set({ ...userData, updatedAt: new Date() })
-      .where(eq(users.id, id))
+      .where(eq(betterAuthUsers.id, id))
       .returning();
 
     if (!updatedUser) {
@@ -98,12 +65,14 @@ export class UserService {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.db.drizzle.delete(users).where(eq(users.id, id));
+    const result = await this.db.drizzle
+      .delete(betterAuthUsers)
+      .where(eq(betterAuthUsers.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.db.drizzle.select().from(users);
+  async findAll(): Promise<BetterAuthUser[]> {
+    return await this.db.drizzle.select().from(betterAuthUsers);
   }
 
   async getUserById(id: string): Promise<UserModel> {
@@ -116,11 +85,12 @@ export class UserService {
   }
 
   async getUsers(limit = 20, offset = 0): Promise<UserModel[]> {
-    const usersList = await this.db.drizzle.query.users.findMany({
-      limit,
-      offset,
-      orderBy: (u, { desc }) => [desc(u.createdAt)],
-    });
+    const usersList = await this.db.drizzle
+      .select()
+      .from(betterAuthUsers)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(betterAuthUsers.createdAt);
     return usersList.map(toUserModel);
   }
 
@@ -130,9 +100,9 @@ export class UserService {
   ): Promise<UserModel> {
     await this.getUserById(id);
     const updated = await this.db.drizzle
-      .update(users)
+      .update(betterAuthUsers)
       .set(data)
-      .where(eq(users.id, id))
+      .where(eq(betterAuthUsers.id, id))
       .returning();
     this.logger.log(`User updated: ${id}`);
     return toUserModel(updated[0]);
@@ -140,7 +110,9 @@ export class UserService {
 
   async deleteUser(id: string): Promise<boolean> {
     await this.getUserById(id);
-    await this.db.drizzle.delete(users).where(eq(users.id, id));
+    await this.db.drizzle
+      .delete(betterAuthUsers)
+      .where(eq(betterAuthUsers.id, id));
     this.logger.log(`User deleted: ${id}`);
     return true;
   }

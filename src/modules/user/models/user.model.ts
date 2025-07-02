@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
 
-import { UserRole } from '../../../infra/database/schemas/users.schema';
+import { UserRole } from '../../../infra/database/schemas/better-auth.schema';
 
 registerEnumType(UserRole, {
   name: 'UserRole',

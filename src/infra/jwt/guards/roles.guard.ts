@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
-import { UserRole } from '../../database/schemas/users.schema';
+import { UserRole } from '../../database/schemas/better-auth.schema';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

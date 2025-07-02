@@ -3,7 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 
 import config from '../config/env.config';
-import { JwtAuthGuard } from '../infra/jwt/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../infra/better-auth/better-auth.guard';
+import { BetterAuthModule } from '../infra/better-auth/better-auth.module';
 
 import { GraphQLConfigModule } from './graphql.module';
 import { LoggerModule } from './logger/logger.module';
@@ -16,6 +17,7 @@ import { SecurityModule } from './security/security.module';
       isGlobal: true,
       load: [config],
     }),
+    BetterAuthModule,
     GraphQLConfigModule,
     LoggerModule,
     SecurityModule,
@@ -23,7 +25,7 @@ import { SecurityModule } from './security/security.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: BetterAuthGuard,
     },
   ],
 })

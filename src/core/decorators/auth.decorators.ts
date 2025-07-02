@@ -1,7 +1,7 @@
 import { SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
 
-import { UserRole } from '../../infra/database/schemas/users.schema';
-import { JwtAuthGuard } from '../../infra/jwt/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../../infra/better-auth/better-auth.guard';
+import { UserRole } from '../../infra/database/schemas/better-auth.schema';
 import { RolesGuard } from '../../infra/jwt/guards/roles.guard';
 
 export const IS_PUBLIC_KEY = 'isPublic';
@@ -18,15 +18,15 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export const Roles = (...roles: UserRole[]) => SetMetadata(ROLES_KEY, roles);
 
 /**
- * Apply JWT authentication guard
+ * Apply BetterAuth authentication guard
  */
-export const Auth = () => UseGuards(JwtAuthGuard);
+export const Auth = () => UseGuards(BetterAuthGuard);
 
 /**
  * Apply both authentication and role-based authorization
  */
 export const AuthRoles = (...roles: UserRole[]) =>
-  applyDecorators(UseGuards(JwtAuthGuard, RolesGuard), Roles(...roles));
+  applyDecorators(UseGuards(BetterAuthGuard, RolesGuard), Roles(...roles));
 
 /**
  * Admin only access

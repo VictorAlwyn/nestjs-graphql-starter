@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
-import { JwtInfraModule } from './jwt/jwt.module';
+import { BetterAuthModule } from './better-auth/better-auth.module';
 import { QueueModule } from './queue/queue.module';
 
 @Module({
@@ -11,14 +11,14 @@ import { QueueModule } from './queue/queue.module';
     DatabaseModule,
     EmailModule,
     HealthModule,
-    JwtInfraModule,
+    BetterAuthModule,
     QueueModule,
   ],
   exports: [
     DatabaseModule,
     EmailModule,
     HealthModule,
-    JwtInfraModule,
+    BetterAuthModule,
     QueueModule,
   ],
 })

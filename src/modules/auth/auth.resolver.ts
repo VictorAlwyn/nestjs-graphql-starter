@@ -1,32 +1,110 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Resolver, Mutation, Args, Query, Context } from '@nestjs/graphql';
 
-import { Auth, Public } from '../../core/decorators/auth.decorators';
+import { Audit } from '../../core/decorators/audit.decorator';
+import { Public, Auth } from '../../core/decorators/auth.decorators';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { AuditLogAction } from '../../infra/database/schemas/audit-logs.schema';
 import { UserModel } from '../user/models/user.model';
 
-import { LoginInput } from './dto/auth.inputs';
-import { AuthPayload, MessageResponse } from './dto/auth.outputs';
-import { AuthService } from './services/auth.service';
+import { AuthService } from './auth.service';
+import {
+  LoginInput,
+  RegisterInput,
+  RequestPasswordResetInput,
+  ResetPasswordInput,
+} from './dto/auth.inputs';
+import { AuthPayload } from './dto/auth.outputs';
+import { AuthEmailService } from './services/auth-email.service';
 
-@Resolver(() => UserModel)
+@Resolver()
 export class AuthResolver {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly authEmailService: AuthEmailService,
+  ) {}
 
-  @Public()
   @Mutation(() => AuthPayload)
-  async login(@Args('input') input: LoginInput): Promise<AuthPayload> {
-    return this.authService.login(input);
+  @Public()
+  @Audit({ action: AuditLogAction.LOGIN, resource: 'auth' })
+  async login(
+    @Args('input') loginInput: LoginInput,
+    @Context() context,
+  ): Promise<AuthPayload> {
+    return this.authService.login(loginInput, context.req);
   }
 
+  @Mutation(() => AuthPayload)
+  @Public()
+  @Audit({ action: AuditLogAction.REGISTER, resource: 'auth' })
+  async register(
+    @Args('input') registerInput: RegisterInput,
+    @Context() context,
+  ): Promise<AuthPayload> {
+    return this.authService.register(registerInput, context.req);
+  }
+
+  @Mutation(() => AuthPayload)
+  @Audit({ action: AuditLogAction.LOGIN, resource: 'oauth' })
+  async loginWithOAuth(
+    @Args('provider') provider: string,
+    @Args('code') code: string,
+    @Context() context,
+  ): Promise<AuthPayload> {
+    return this.authService.loginWithOAuth(provider, code, context.req);
+  }
+
+  @Mutation(() => Boolean)
   @Auth()
-  @Query(() => UserModel)
-  me(@CurrentUser() user: UserModel): UserModel {
+  @Audit({ action: AuditLogAction.LOGOUT, resource: 'auth' })
+  async logout(@Context() context): Promise<boolean> {
+    await this.authService.logout(context.req);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @Audit({ action: AuditLogAction.PASSWORD_RESET, resource: 'auth' })
+  async requestPasswordReset(
+    @Args('input') input: RequestPasswordResetInput,
+    @Context() context,
+  ): Promise<boolean> {
+    await this.authService.requestPasswordReset(input.email, context.req);
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @Audit({ action: AuditLogAction.PASSWORD_RESET, resource: 'auth' })
+  async resetPassword(
+    @Args('input') input: ResetPasswordInput,
+    @Context() context,
+  ): Promise<boolean> {
+    await this.authService.resetPassword(
+      input.token,
+      input.newPassword,
+      context.req,
+    );
+    return true;
+  }
+
+  @Query(() => UserModel, { nullable: true })
+  @Auth()
+  async me(@CurrentUser() user: UserModel): Promise<UserModel> {
     return user;
   }
 
+  @Query(() => [String])
+  getOAuthProviders(): string[] {
+    return this.authService.getOAuthProviders();
+  }
+
+  @Query(() => String)
+  getOAuthUrl(@Args('provider') provider: string): string {
+    return this.authService.getOAuthUrl(provider);
+  }
+
+  @Query(() => Boolean)
   @Auth()
-  @Mutation(() => MessageResponse)
-  logout(): MessageResponse {
-    return { message: 'Logged out successfully' };
+  async validateToken(@Args('token') token: string): Promise<boolean> {
+    const user = await this.authService.validateUser(token);
+    return !!user;
   }
 }

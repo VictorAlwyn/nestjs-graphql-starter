@@ -1,0 +1,1 @@
+ALTER TABLE "better_auth_users" ADD COLUMN "password" text;

@@ -12,28 +12,22 @@ type AuthPayload {
 """Date custom scalar type"""
 scalar Date
 
-type DeleteUserResponse {
-  message: String!
-  success: Boolean!
-}
-
 input LoginInput {
   email: String!
   password: String!
 }
 
-type MessageResponse {
-  message: String!
-}
-
 type Mutation {
   addRecipe(input: NewRecipeInput!): Recipe!
-  deleteUser: DeleteUserResponse!
+  deleteUser(id: String!): Boolean!
   login(input: LoginInput!): AuthPayload!
-  logout: MessageResponse!
-  register(input: RegisterInput!): UserModel!
+  loginWithOAuth(code: String!, provider: String!): AuthPayload!
+  logout: Boolean!
+  register(input: RegisterInput!): AuthPayload!
   removeRecipe(id: String!): Boolean!
-  updateUser(input: UpdateUserInput!): UserResponse!
+  requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+  resetPassword(input: ResetPasswordInput!): Boolean!
+  updateUser(id: String!, input: UpdateUserInput!): UserModel!
 }
 
 input NewRecipeInput {
@@ -43,11 +37,14 @@ input NewRecipeInput {
 }
 
 type Query {
-  me: UserModel!
+  getOAuthProviders: [String!]!
+  getOAuthUrl(provider: String!): String!
+  me: UserModel
   recipe(id: String!): Recipe!
   recipes(skip: Int! = 0, take: Int! = 25): [Recipe!]!
-  user(id: ID!): UserModel!
-  users(limit: Float, offset: Float): [UserModel!]!
+  user(id: String!): UserModel!
+  users: [UserModel!]!
+  validateToken(token: String!): Boolean!
 }
 
 """recipe """
@@ -63,6 +60,15 @@ input RegisterInput {
   email: String!
   name: String!
   password: String!
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  newPassword: String!
+  token: String!
 }
 
 type Subscription {
@@ -82,11 +88,6 @@ type UserModel {
   name: String!
   role: UserRole!
   updatedAt: Date!
-}
-
-type UserResponse {
-  message: String!
-  user: UserModel!
 }
 
 """User role enumeration"""

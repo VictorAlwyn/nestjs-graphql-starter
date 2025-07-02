@@ -1,10 +1,10 @@
-import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
-import { Auth, Public } from '../../core/decorators/auth.decorators';
-import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { Audit } from '../../core/decorators/audit.decorator';
+import { Auth, ModeratorOrAdmin } from '../../core/decorators/auth.decorators';
+import { AuditLogAction } from '../../infra/database/schemas/audit-logs.schema';
 
-import { UpdateUserInput, RegisterInput } from './dto/user.input';
-import { UserResponse, DeleteUserResponse } from './dto/user.output';
+import { UpdateUserInput } from './dto/user.input';
 import { UserModel } from './models/user.model';
 import { UserService } from './user.service';
 
@@ -12,49 +12,35 @@ import { UserService } from './user.service';
 export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
-  @Public()
-  @Mutation(() => UserModel)
-  register(@Args('input') input: RegisterInput): Promise<UserModel> {
-    return this.userService.createUser(input);
-  }
-
-  @Auth()
   @Query(() => UserModel)
-  me(@CurrentUser() user: UserModel): Promise<UserModel> {
-    return this.userService.getUserById(user.id);
-  }
-
   @Auth()
-  @Query(() => UserModel)
-  user(@Args('id', { type: () => ID }) id: string): Promise<UserModel> {
+  @Audit({ action: AuditLogAction.USER_READ, resource: 'user' })
+  async user(@Args('id') id: string): Promise<UserModel> {
     return this.userService.getUserById(id);
   }
 
-  @Auth()
   @Query(() => [UserModel])
-  users(
-    @Args('limit', { type: () => Number, nullable: true }) limit = 20,
-    @Args('offset', { type: () => Number, nullable: true }) offset = 0,
-  ): Promise<UserModel[]> {
-    return this.userService.getUsers(limit, offset);
+  @ModeratorOrAdmin()
+  @Audit({ action: AuditLogAction.USER_READ, resource: 'user' })
+  async users(): Promise<UserModel[]> {
+    return this.userService.getUsers();
   }
 
+  @Mutation(() => UserModel)
   @Auth()
-  @Mutation(() => UserResponse)
+  @Audit({ action: AuditLogAction.USER_UPDATE, resource: 'user' })
   async updateUser(
-    @CurrentUser() user: UserModel,
+    @Args('id') id: string,
     @Args('input') input: UpdateUserInput,
-  ): Promise<UserResponse> {
-    const updated = await this.userService.updateUser(user.id, input);
-    return { user: updated, message: 'User updated successfully' };
+  ): Promise<UserModel> {
+    return this.userService.updateUser(id, input);
   }
 
+  @Mutation(() => Boolean)
   @Auth()
-  @Mutation(() => DeleteUserResponse)
-  async deleteUser(
-    @CurrentUser() user: UserModel,
-  ): Promise<DeleteUserResponse> {
-    await this.userService.deleteUser(user.id);
-    return { success: true, message: 'User deleted successfully' };
+  @Audit({ action: AuditLogAction.USER_DELETE, resource: 'user' })
+  async deleteUser(@Args('id') id: string): Promise<boolean> {
+    await this.userService.delete(id);
+    return true;
   }
 }

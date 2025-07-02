@@ -1,29 +1,17 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 
-import { JwtStrategy } from '../../infra/jwt/strategies/jwt.strategy';
-import { UserModule } from '../user/user.module';
+import { BetterAuthModule } from '../../infra/better-auth/better-auth.module';
+import { EmailModule } from '../../infra/email/email.module';
 
 import { AuthResolver } from './auth.resolver';
-import { AuthService } from './services/auth.service';
+import { AuthService } from './auth.service';
+import { OAuthController } from './oauth.controller';
+import { AuthEmailService } from './services/auth-email.service';
 
 @Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'your-secret-key'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
-        },
-      }),
-    }),
-    UserModule,
-  ],
-  providers: [AuthResolver, AuthService, JwtStrategy],
-  exports: [AuthService, JwtStrategy],
+  imports: [BetterAuthModule, EmailModule],
+  providers: [AuthResolver, AuthService, AuthEmailService],
+  controllers: [OAuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

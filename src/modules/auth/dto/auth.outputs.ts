@@ -16,3 +16,5 @@ export class MessageResponse {
   @Field()
   message: string;
 }
+
+export { UserModel };

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { User } from '../../database/schemas/users.schema';
+import { BetterAuthUser } from '../../database/schemas/better-auth.schema';
 
 export interface JwtPayload {
   sub: string;
@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: JwtPayload): Omit<User, 'password'> {
+  validate(payload: JwtPayload): Omit<BetterAuthUser, 'password'> {
     if (!payload.sub || !payload.email) {
       throw new UnauthorizedException('Invalid token payload');
     }
@@ -31,9 +31,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: payload.sub,
       email: payload.email,
-      role: payload.role,
       name: '', // This will be populated by the auth service
+      role: payload.role,
       isActive: true,
+      authProvider: 'email',
+      providerId: null,
+      avatarUrl: null,
+      emailVerified: false,
+      emailVerificationToken: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      lastLoginAt: null,
+      loginAttempts: 0,
+      lockedUntil: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
