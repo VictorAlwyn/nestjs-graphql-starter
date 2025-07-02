@@ -1,26 +1,61 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
 
-import { AppModule } from './../src/app.module';
+import { createTestingApp, closeTestingApp, TestApp } from './setup/test-setup';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('App (e2e)', () => {
+  let testApp: TestApp;
+  let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeAll(async () => {
+    testApp = await createTestingApp();
+    app = testApp.app;
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await closeTestingApp(testApp);
+  });
+
+  describe('Health Check', () => {
+    it('should return health status', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/health')
+        .expect(200);
+
+      expect(response.body).toBeDefined();
+      expect(response.body.status).toBe('ok');
+    });
+  });
+
+  describe('GraphQL Endpoint', () => {
+    it('should accept GraphQL queries', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: '{ __typename }',
+        })
+        .expect(200);
+
+      expect(response.body).toBeDefined();
+      expect(response.body.data).toBeDefined();
+    });
+
+    it('should handle invalid GraphQL queries', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/graphql')
+        .send({
+          query: '{ invalidField }',
+        })
+        .expect(400); // Bad Request for invalid GraphQL
+
+      expect(response.body).toBeDefined();
+      expect(response.body.errors).toBeDefined();
+    });
+  });
+
+  describe('404 Handling', () => {
+    it('should return 404 for non-existent endpoints', async () => {
+      await request(app.getHttpServer()).get('/non-existent').expect(404);
+    });
   });
 });

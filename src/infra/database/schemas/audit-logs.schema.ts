@@ -31,12 +31,6 @@ export enum AuditLogAction {
   USER_DEACTIVATE = 'user_deactivate',
   USER_READ = 'user_read',
 
-  // Recipe management
-  RECIPE_CREATE = 'recipe_create',
-  RECIPE_READ = 'recipe_read',
-  RECIPE_UPDATE = 'recipe_update',
-  RECIPE_DELETE = 'recipe_delete',
-
   // AI/Worker operations
   AI_GENERATE = 'ai_generate',
   AI_PROCESS = 'ai_process',

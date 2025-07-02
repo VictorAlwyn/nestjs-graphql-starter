@@ -18,6 +18,9 @@ lerna-debug.log*
 # Tests
 /coverage
 /.nyc_output
+/test-results/
+/playwright-report/
+/playwright/.cache/
 
 # IDEs and editors
 /.idea
@@ -41,6 +44,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+
+# Test environment files
+.env.test
 
 # temp directory
 .temp

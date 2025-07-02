@@ -18,11 +18,21 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:unit": "jest --testPathPattern=test/unit",
+    "test:integration": "jest --testPathPattern=test/graphql --testPathPattern=test/rest",
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
+    "test:setup": "./scripts/setup-test-db.sh",
+    "test:teardown": "docker-compose -f docker-compose.test.yml down -v",
+    "test:full": "bun run test:setup && bun run test:all && bun run test:teardown",
+    "test:run": "./scripts/run-tests.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
+    "db:generate:test": "drizzle-kit generate --config=drizzle.config.test.ts",
+    "db:push:test": "drizzle-kit push --config=drizzle.config.test.ts",
+    "db:studio:test": "drizzle-kit studio --config=drizzle.config.test.ts",
     "dev:setup": "./scripts/dev-setup.sh",
     "dev:reset": "bun db:drop && bun db:migrate && bun db:generate",
     "dev:clean": "rm -rf dist coverage .nyc_output",
@@ -117,17 +127,26 @@
     "moduleFileExtensions": [
       "js",
       "json",
-      "ts"
+      "ts",
+      "tsx"
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": "ts-jest",
+      "^.+\\.(t|j)sx$": "ts-jest"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^react$": "<rootDir>/../node_modules/react",
+      "^@react-email/components$": "<rootDir>/../test/mocks/react-email-mock.ts"
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/../test/setup/jest-setup.ts"
+    ]
   }
 }

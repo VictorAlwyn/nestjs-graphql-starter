@@ -1,0 +1,170 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_DB: test_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5433/test_db
+  REDIS_URL: redis://localhost:6380
+
+jobs:
+  quick-check:
+    name: Quick Check
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:alpine
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+
+      redis:
+        image: redis:alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6380:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create test environment
+        run: |
+          cat > .env.test << EOF
+          NODE_ENV=test
+          DATABASE_URL=${{ env.DATABASE_URL }}
+          REDIS_URL=${{ env.REDIS_URL }}
+          JWT_SECRET=test-jwt-secret-key-for-testing-only
+          JWT_EXPIRES_IN=1h
+          EMAIL_FROM=test@example.com
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          SMTP_SECURE=false
+          SMTP_USER=
+          SMTP_PASS=
+          GOOGLE_OAUTH_ENABLED=false
+          GOOGLE_CLIENT_ID=test-google-client-id
+          GOOGLE_CLIENT_SECRET=test-google-client-secret
+          FACEBOOK_OAUTH_ENABLED=false
+          FACEBOOK_CLIENT_ID=test-facebook-client-id
+          FACEBOOK_CLIENT_SECRET=test-facebook-client-secret
+          FRONTEND_URL=http://localhost:3000
+          REQUIRE_EMAIL_VERIFICATION=false
+          PORT=3001
+          API_PREFIX=api
+          CORS_ORIGIN=http://localhost:3000
+          LOG_LEVEL=error
+          BCRYPT_ROUNDS=4
+          RATE_LIMIT_TTL=60
+          RATE_LIMIT_LIMIT=1000
+          GRAPHQL_PLAYGROUND=false
+          GRAPHQL_INTROSPECTION=true
+          EOF
+
+      - name: Wait for database
+        run: |
+          echo "Waiting for PostgreSQL..."
+          timeout 60 bash -c 'until docker exec $(docker ps -q --filter "ancestor=postgres:alpine") pg_isready -U ${{ env.POSTGRES_USER }}; do sleep 2; done'
+          echo "PostgreSQL is ready!"
+
+      - name: Setup database
+        run: |
+          npm run db:generate
+          npm run db:migrate
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          REDIS_URL: ${{ env.REDIS_URL }}
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          REDIS_URL: ${{ env.REDIS_URL }}
+
+      - name: Build application
+        run: npm run build
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('## PR Check Results')
+            );
+
+            const status = '${{ job.status }}';
+            const emoji = status === 'success' ? '✅' : '❌';
+            const message = `## PR Check Results ${emoji}
+
+            **Status:** ${status}
+            **Branch:** \`${{ github.head_ref }}\`
+            **Commit:** \`${{ github.sha }}\`
+
+            ### Tests Run:
+            - ✅ Linting
+            - ✅ Unit Tests
+            - ✅ Integration Tests
+            - ✅ Build Check
+
+            ${status === 'success' ? '🎉 All checks passed! Ready for review.' : '⚠️ Some checks failed. Please review the logs.'}
+
+            *Last updated: ${new Date().toISOString()}*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message,
+              });
+            }

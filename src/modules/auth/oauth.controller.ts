@@ -2,6 +2,7 @@ import { Controller, Post, Req, Res, Body, Param } from '@nestjs/common';
 import { Response } from 'express';
 
 import { Audit } from '../../core/decorators/audit.decorator';
+import { Public } from '../../core/decorators/auth.decorators';
 import { BetterAuthService } from '../../infra/better-auth/better-auth.service';
 import { AuditLogAction } from '../../infra/database/schemas/audit-logs.schema';
 
@@ -11,6 +12,7 @@ export interface OAuthCallbackInput {
 }
 
 @Controller('auth')
+@Public()
 export class OAuthController {
   constructor(private readonly betterAuthService: BetterAuthService) {}
 

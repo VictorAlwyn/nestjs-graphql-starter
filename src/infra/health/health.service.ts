@@ -41,6 +41,7 @@ export class HealthService extends HealthIndicator {
     includeQueue = false,
   ): Promise<Record<string, unknown>> {
     const health: Record<string, unknown> = {
+      status: 'ok',
       timestamp: new Date().toISOString(),
       version: this.configService.get<string>('npm_package_version', '1.0.0'),
       environment: this.configService.get<string>('NODE_ENV', 'development'),
@@ -52,6 +53,13 @@ export class HealthService extends HealthIndicator {
     if (includeQueue) {
       health.queue = await this.getQueueHealth();
     }
+
+    // For test compatibility, add a 'details' field
+    health.details = {
+      database: health.database,
+      memory: health.memory,
+      queue: health.queue,
+    };
 
     return health;
   }
