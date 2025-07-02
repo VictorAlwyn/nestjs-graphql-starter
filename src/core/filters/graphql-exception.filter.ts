@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { GqlArgumentsHost } from '@nestjs/graphql';
 
+import { extractGraphQLContext } from '../types/graphql.types';
+
 interface ErrorResponse {
   message: string;
   code: string;
@@ -26,7 +28,7 @@ export class GraphQLExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): ErrorResponse {
     const gqlHost = GqlArgumentsHost.create(host);
-    const ctx = gqlHost.getContext();
+    const ctx = extractGraphQLContext(gqlHost.getContext());
     const req = ctx?.req;
 
     let errorResponse: ErrorResponse = {

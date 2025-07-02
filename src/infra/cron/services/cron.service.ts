@@ -265,7 +265,7 @@ export class CronService implements OnModuleInit {
     jobName: string,
     data?: Record<string, unknown>,
   ): Promise<string | null> {
-    return await this.boss.send(jobName, data);
+    return this.boss.send(jobName, data);
   }
 
   async scheduleJobLater(
@@ -273,7 +273,7 @@ export class CronService implements OnModuleInit {
     data: Record<string, unknown>,
     delayInSeconds: number,
   ): Promise<string | null> {
-    return await this.boss.send(jobName, data, { startAfter: delayInSeconds });
+    return this.boss.send(jobName, data, { startAfter: delayInSeconds });
   }
 
   // Method to schedule additional custom cron jobs

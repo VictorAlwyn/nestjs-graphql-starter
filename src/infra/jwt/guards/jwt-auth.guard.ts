@@ -4,6 +4,8 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
 
+import { extractGraphQLContext } from '../../../core/types/graphql.types';
+
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private reflector: Reflector) {
@@ -27,6 +29,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   getRequest(context: ExecutionContext): Request {
     const ctx = GqlExecutionContext.create(context);
-    return ctx.getContext().req as Request;
+    const gqlCtx = extractGraphQLContext(ctx.getContext());
+    return gqlCtx.req as Request;
   }
 }

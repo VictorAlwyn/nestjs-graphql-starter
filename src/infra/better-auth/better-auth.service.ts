@@ -45,7 +45,7 @@ export class BetterAuthService {
   /**
    * Get session from request
    */
-  async getSession(req: any): Promise<BetterAuthSessionResponse | null> {
+  async getSession(req: unknown): Promise<BetterAuthSessionResponse | null> {
     try {
       const token = this.extractTokenFromRequest(req);
       if (!token) return null;
@@ -366,7 +366,7 @@ export class BetterAuthService {
       isActive: true,
     };
 
-    return await this.adapter.createSession(sessionData);
+    return this.adapter.createSession(sessionData);
   }
 
   /**
@@ -404,7 +404,7 @@ export class BetterAuthService {
    * Handle failed login attempts
    */
   private async handleFailedLogin(user: BetterAuthUser): Promise<void> {
-    const newAttempts = (user.loginAttempts || 0) + 1;
+    const newAttempts = (user.loginAttempts ?? 0) + 1;
 
     if (newAttempts >= this.config.security.maxLoginAttempts) {
       const lockedUntil = new Date(
@@ -460,7 +460,7 @@ export class BetterAuthService {
       ip?: string;
       connection?: { remoteAddress?: string };
     };
-    return request.ip || request.connection?.remoteAddress;
+    return request.ip ?? request.connection?.remoteAddress;
   }
 
   /**

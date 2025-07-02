@@ -12,32 +12,14 @@ import {
   AuditLogAction,
   AuditLogStatus,
 } from '../../infra/database/schemas/audit-logs.schema';
-import { BetterAuthUser } from '../../infra/database/schemas/better-auth.schema';
+import {
+  GraphQLContext,
+  GraphQLInfo,
+  extractGraphQLContext,
+  extractGraphQLInfo,
+} from '../types/graphql.types';
 
 import { AuditService } from './audit.service';
-
-interface GraphQLContext {
-  req?: {
-    user?: BetterAuthUser;
-    ip?: string;
-    connection?: {
-      remoteAddress?: string;
-    };
-    headers?: Record<string, string>;
-    body?: {
-      variables?: Record<string, unknown>;
-    };
-  };
-}
-
-interface GraphQLInfo {
-  operation?: {
-    name?: {
-      value?: string;
-    };
-    operation?: string;
-  };
-}
 
 @Injectable()
 export class AuditGraphQLInterceptor implements NestInterceptor {
@@ -45,8 +27,8 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const gqlContext = GqlExecutionContext.create(context);
-    const info = gqlContext.getInfo();
-    const ctx = gqlContext.getContext();
+    const info = extractGraphQLInfo(gqlContext.getInfo());
+    const ctx = extractGraphQLContext(gqlContext.getContext());
 
     // Extract operation details safely
     const operationName = this.getOperationName(info);
@@ -80,7 +62,7 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
             operationName,
             operationType,
             variables,
-            user,
+            user ?? undefined,
             {
               ipAddress,
               userAgent,
@@ -96,9 +78,9 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
               operationName,
               operationType,
               variables,
-              userId: user?.id,
-              userEmail: user?.email,
-              userRole: user?.role,
+              userId: user?.id ?? undefined,
+              userEmail: user?.email ?? undefined,
+              userRole: user?.role ?? undefined,
               ipAddress,
               userAgent,
               requestId,
@@ -120,9 +102,9 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
             operationName,
             operationType,
             variables,
-            userId: user?.id,
-            userEmail: user?.email,
-            userRole: user?.role,
+            userId: user?.id ?? undefined,
+            userEmail: user?.email ?? undefined,
+            userRole: user?.role ?? undefined,
             ipAddress,
             userAgent,
             requestId,
@@ -164,6 +146,6 @@ export class AuditGraphQLInterceptor implements NestInterceptor {
   }
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }

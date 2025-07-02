@@ -7,6 +7,8 @@ import {
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
+import { extractGraphQLContext } from '../../core/types/graphql.types';
+
 import { BetterAuthService } from './better-auth.service';
 
 @Injectable()
@@ -27,7 +29,8 @@ export class BetterAuthGuard implements CanActivate {
     }
 
     const gqlContext = GqlExecutionContext.create(context);
-    const request = gqlContext.getContext().req;
+    const gqlCtx = extractGraphQLContext(gqlContext.getContext());
+    const request = gqlCtx.req;
 
     if (!request) {
       throw new UnauthorizedException('Request context not found');

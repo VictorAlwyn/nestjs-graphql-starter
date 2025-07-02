@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { AuditLogAction } from '../../infra/database/schemas/audit-logs.schema';
+import { extractGraphQLContext } from '../types/graphql.types';
 
 import { RateLimitService } from './rate-limit.service';
 
@@ -42,7 +43,7 @@ export class RateLimitGuard implements CanActivate {
     }
 
     const gqlContext = GqlExecutionContext.create(context);
-    const ctx = gqlContext.getContext();
+    const ctx = extractGraphQLContext(gqlContext.getContext());
     const request = ctx.req;
     const user = request?.user;
 
